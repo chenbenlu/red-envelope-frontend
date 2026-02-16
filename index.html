@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>搶紅包系統 (API 對接版)</title>
+    <title>搶紅包系統</title>
     <style>
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         #app { width: 100%; max-width: 400px; height: 100vh; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; text-align: center; display: flex; flex-direction: column; }
@@ -22,7 +22,6 @@
 
         #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 100; }
         
-        /* 測試用的管理員按鈕 */
         #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; }
         #admin-panel button { background: #333; padding: 5px 10px; font-size: 12px; }
     </style>
@@ -59,7 +58,8 @@
 </div>
 
 <script>
-    const API_BASE = "http://192.168.88.254:8000"; // 你的 FastAPI 伺服器網址
+    // 這裡換成了你專屬的 ngrok 網址
+    const API_BASE = "https://untruckled-dalilah-twitchily.ngrok-free.dev"; 
     
     let currentUser = "";
     let myTickets = 0;
@@ -73,7 +73,6 @@
         document.getElementById(screenId).classList.add('active');
     }
 
-    // --- API 1: 提交投注 ---
     async function submitBet() {
         const user = document.getElementById('username').value.trim();
         const amount = parseInt(document.getElementById('bet-amount').value, 10);
@@ -88,7 +87,10 @@
         try {
             const res = await fetch(`${API_BASE}/bet`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
+                },
                 body: JSON.stringify({ user_id: user, amount: amount })
             });
             const data = await res.json();
@@ -102,7 +104,7 @@
             updateStatusBar();
             
             switchScreen('screen-wait');
-            startPolling(); // 開始向伺服器輪詢狀態
+            startPolling(); 
 
         } catch (err) {
             msgEl.innerText = err.message;
@@ -110,11 +112,14 @@
         }
     }
 
-    // --- API 2 (輪詢): 檢查遊戲狀態 ---
     function startPolling() {
         pollingInterval = setInterval(async () => {
             try {
-                const res = await fetch(`${API_BASE}/status`);
+                const res = await fetch(`${API_BASE}/status`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
+                    }
+                });
                 const data = await res.json();
                 document.getElementById('wait-status').innerText = `總獎池: ${data.total_pool} 元 | 狀態: ${data.status}`;
                 
@@ -125,14 +130,12 @@
             } catch (err) {
                 console.error("輪詢失敗:", err);
             }
-        }, 1000); // 每秒問一次
+        }, 1000);
     }
 
-    // --- API 3: 搶紅包 ---
     async function grabEnvelope(envElement) {
         if (myTickets <= 0 || isGrabbing) return;
 
-        // 隱藏紅包，防止連點
         envElement.style.pointerEvents = 'none';
         envElement.style.display = 'none';
         isGrabbing = true;
@@ -140,7 +143,10 @@
         try {
             const res = await fetch(`${API_BASE}/grab`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
+                },
                 body: JSON.stringify({ user_id: currentUser })
             });
             const data = await res.json();
@@ -156,17 +162,20 @@
 
         } catch (err) {
             alert("搶奪失敗: " + err.message);
-            // 發生錯誤（例如池子空了），把紅包顯示回來或直接結束
             if(err.message === "紅包已經被搶光了") endGame();
         } finally {
             isGrabbing = false;
         }
     }
 
-    // --- 管理員 API (僅供測試) ---
     async function adminSettle() {
         try {
-            const res = await fetch(`${API_BASE}/admin/settle`, { method: 'POST' });
+            const res = await fetch(`${API_BASE}/admin/settle`, { 
+                method: 'POST',
+                headers: {
+                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
+                }
+            });
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail);
             alert("已強制結算，開局！");
@@ -175,7 +184,6 @@
         }
     }
 
-    // --- 動畫與介面邏輯 ---
     function startGame() {
         switchScreen('screen-grab');
         gameInterval = setInterval(createEnvelope, 500);
@@ -216,7 +224,7 @@
         clearInterval(gameInterval);
         setTimeout(() => {
             alert(`遊戲結束！你總共獲得了 ${myTotalWon} 元`);
-            window.location.reload(); // 簡單暴力：重整網頁重新開始
+            window.location.reload(); 
         }, 1000);
     }
 </script>
