@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搶紅包系統 (API 對接版)</title>
+    <style>
+        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #app { width: 100%; max-width: 400px; height: 100vh; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; text-align: center; display: flex; flex-direction: column; }
+        .screen { display: none; flex: 1; padding: 20px; flex-direction: column; justify-content: center; }
+        .active { display: flex; }
+        h1 { color: #d32f2f; }
+        input { padding: 10px; font-size: 16px; width: 80%; margin-bottom: 10px; text-align: center; }
+        button { padding: 10px 20px; font-size: 18px; background-color: #d32f2f; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px;}
+        button:disabled { background-color: #ccc; }
+        
+        #game-area { position: relative; flex: 1; background-color: #ffebee; overflow: hidden; border-top: 2px solid #d32f2f; border-bottom: 2px solid #d32f2f; }
+        .status-bar { padding: 10px; background: #fff; font-weight: bold; }
+        
+        .envelope { position: absolute; width: 50px; height: 70px; background-color: #d32f2f; color: gold; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; animation: fall linear forwards; }
+        @keyframes fall { from { top: -80px; } to { top: 100%; } }
+
+        #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 100; }
+        
+        /* 測試用的管理員按鈕 */
+        #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; }
+        #admin-panel button { background: #333; padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <div id="screen-bet" class="screen active">
+        <h1>紅包大挑戰</h1>
+        <input type="text" id="username" placeholder="輸入玩家名稱 (例如: Louis)">
+        <input type="number" id="bet-amount" placeholder="輸入投注金額 (100的倍數)" step="100" min="100">
+        <button id="btn-bet" onclick="submitBet()">確認投注</button>
+        <p id="bet-msg" style="color: red;"></p>
+    </div>
+
+    <div id="screen-wait" class="screen">
+        <h1>等待開局...</h1>
+        <p>伺服器正在結算總獎金池</p>
+        <p id="wait-status">目前狀態: 輪詢中...</p>
+    </div>
+
+    <div id="screen-grab" class="screen" style="padding: 0;">
+        <div class="status-bar">
+            玩家: <span id="display-name"></span> | 剩餘次數: <span id="display-tickets">0</span> | 已獲金額: <span id="display-won">0</span>
+        </div>
+        <div id="game-area"></div>
+    </div>
+
+    <div id="result-modal"></div>
+
+    <div id="admin-panel">
+        <button onclick="adminSettle()">管理員: 強制結算</button>
+    </div>
+</div>
+
+<script>
+    const API_BASE = "http://192.168.88.254:8000"; // 你的 FastAPI 伺服器網址
+    
+    let currentUser = "";
+    let myTickets = 0;
+    let myTotalWon = 0;
+    let gameInterval = null;
+    let pollingInterval = null;
+    let isGrabbing = false;
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    // --- API 1: 提交投注 ---
+    async function submitBet() {
+        const user = document.getElementById('username').value.trim();
+        const amount = parseInt(document.getElementById('bet-amount').value, 10);
+        const msgEl = document.getElementById('bet-msg');
+
+        if (!user) { msgEl.innerText = "請輸入玩家名稱！"; return; }
+        if (isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "請輸入 100 的倍數！"; return; }
+
+        document.getElementById('btn-bet').disabled = true;
+        msgEl.innerText = "連線中...";
+
+        try {
+            const res = await fetch(`${API_BASE}/bet`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user, amount: amount })
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.detail || "投注失敗");
+
+            currentUser = user;
+            myTickets = data.tickets;
+            myTotalWon = 0;
+            document.getElementById('display-name').innerText = currentUser;
+            updateStatusBar();
+            
+            switchScreen('screen-wait');
+            startPolling(); // 開始向伺服器輪詢狀態
+
+        } catch (err) {
+            msgEl.innerText = err.message;
+            document.getElementById('btn-bet').disabled = false;
+        }
+    }
+
+    // --- API 2 (輪詢): 檢查遊戲狀態 ---
+    function startPolling() {
+        pollingInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE}/status`);
+                const data = await res.json();
+                document.getElementById('wait-status').innerText = `總獎池: ${data.total_pool} 元 | 狀態: ${data.status}`;
+                
+                if (data.status === "GRABBING") {
+                    clearInterval(pollingInterval);
+                    startGame();
+                }
+            } catch (err) {
+                console.error("輪詢失敗:", err);
+            }
+        }, 1000); // 每秒問一次
+    }
+
+    // --- API 3: 搶紅包 ---
+    async function grabEnvelope(envElement) {
+        if (myTickets <= 0 || isGrabbing) return;
+
+        // 隱藏紅包，防止連點
+        envElement.style.pointerEvents = 'none';
+        envElement.style.display = 'none';
+        isGrabbing = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/grab`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: currentUser })
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.detail);
+
+            myTickets = data.tickets_left;
+            myTotalWon = data.total_won_so_far;
+            updateStatusBar();
+            showResultText(`搶到 ${data.won_amount} 元！`);
+
+            if (myTickets <= 0) endGame();
+
+        } catch (err) {
+            alert("搶奪失敗: " + err.message);
+            // 發生錯誤（例如池子空了），把紅包顯示回來或直接結束
+            if(err.message === "紅包已經被搶光了") endGame();
+        } finally {
+            isGrabbing = false;
+        }
+    }
+
+    // --- 管理員 API (僅供測試) ---
+    async function adminSettle() {
+        try {
+            const res = await fetch(`${API_BASE}/admin/settle`, { method: 'POST' });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail);
+            alert("已強制結算，開局！");
+        } catch (err) {
+            alert("結算失敗: " + err.message);
+        }
+    }
+
+    // --- 動畫與介面邏輯 ---
+    function startGame() {
+        switchScreen('screen-grab');
+        gameInterval = setInterval(createEnvelope, 500);
+    }
+
+    function createEnvelope() {
+        if (myTickets <= 0) { clearInterval(gameInterval); return; }
+
+        const area = document.getElementById('game-area');
+        const env = document.createElement('div');
+        env.className = 'envelope';
+        env.innerText = '🧧';
+        
+        const leftPos = Math.random() * (area.clientWidth - 50);
+        env.style.left = leftPos + 'px';
+        const duration = Math.random() * 1.5 + 1.5;
+        env.style.animationDuration = duration + 's';
+
+        env.onclick = () => grabEnvelope(env);
+        area.appendChild(env);
+
+        setTimeout(() => { if(env.parentElement) env.remove(); }, duration * 1000);
+    }
+
+    function updateStatusBar() {
+        document.getElementById('display-tickets').innerText = myTickets;
+        document.getElementById('display-won').innerText = myTotalWon;
+    }
+
+    function showResultText(text) {
+        const modal = document.getElementById('result-modal');
+        modal.innerText = text;
+        modal.style.display = 'block';
+        setTimeout(() => modal.style.display = 'none', 1000);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        setTimeout(() => {
+            alert(`遊戲結束！你總共獲得了 ${myTotalWon} 元`);
+            window.location.reload(); // 簡單暴力：重整網頁重新開始
+        }, 1000);
+    }
+</script>
+</body>
+</html>
