@@ -7,24 +7,22 @@ import threading
 app = FastAPI()
 
 # --- 跨網域 (CORS) 設定 ---
-# 這是最重要的設定！如果不開，你的 github.io 前端會被瀏覽器阻擋，無法呼叫這個 API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 測試期允許所有來源，上線後務必改成你的 github.io 網址
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# --- 系統全域狀態 (測試用，正式環境應改用 Redis + DB) ---
-# 使用 threading.Lock() 來防止極端情況下的併發搶奪問題
+# --- 系統全域狀態與執行緒鎖 ---
 state_lock = threading.Lock()
 
 class GameState:
     def __init__(self):
-        self.status = "OPEN"  # OPEN, LOCKED, GRABBING
-        self.players = {}     # {"Louis": {"bet": 300, "tickets": 3, "won": 0}}
-        self.prize_pool = []  # 存放紅包金額的陣列
+        self.status = "OPEN"  # 狀態: OPEN, LOCKED, GRABBING, FINISHED
+        self.players = {}     # 格式: {"使用者名": {"bet": 300, "tickets": 3, "won": 0}}
+        self.prize_pool = []  
         self.total_pool = 0
 
 game = GameState()
@@ -37,7 +35,13 @@ class BetRequest(BaseModel):
 class GrabRequest(BaseModel):
     user_id: str
 
-# --- 核心演算法 (離散區塊切線段法) ---
+# 管理員專用密碼與請求模型
+ADMIN_SECRET = "louis123"  # 預設密碼，請自行修改
+
+class AdminRequest(BaseModel):
+    secret: str
+
+# --- 核心演算法：離散區塊切線段法 (單位 10 元，保底 10 元) ---
 def generate_discrete_pool(total_amount: int) -> list:
     total_tickets = int(total_amount / 100)
     base_unit = 10
@@ -61,7 +65,6 @@ def generate_discrete_pool(total_amount: int) -> list:
 
 @app.get("/status")
 def get_status():
-    """前端輪詢用：查詢目前遊戲狀態"""
     return {
         "status": game.status,
         "total_pool": game.total_pool,
@@ -70,7 +73,6 @@ def get_status():
 
 @app.post("/bet")
 def place_bet(req: BetRequest):
-    """階段 1：玩家投注"""
     with state_lock:
         if game.status != "OPEN":
             raise HTTPException(status_code=400, detail="目前不在開放投注階段")
@@ -91,9 +93,59 @@ def place_bet(req: BetRequest):
             "total_bet": game.players[req.user_id]["bet"]
         }
 
+@app.post("/grab")
+def grab_envelope(req: GrabRequest):
+    with state_lock:
+        if game.status != "GRABBING":
+            raise HTTPException(status_code=400, detail="目前無法搶奪紅包")
+            
+        player = game.players.get(req.user_id)
+        if not player or player["tickets"] <= 0:
+            raise HTTPException(status_code=400, detail="次數不足或未參與投注")
+
+        if not game.prize_pool:
+            raise HTTPException(status_code=400, detail="紅包已經被搶光了")
+
+        player["tickets"] -= 1
+        won_amount = game.prize_pool.pop()
+        player["won"] += won_amount
+
+        if not game.prize_pool:
+            game.status = "FINISHED"
+
+        return {
+            "msg": "搶奪成功",
+            "won_amount": won_amount,
+            "tickets_left": player["tickets"],
+            "total_won_so_far": player["won"]
+        }
+
+@app.get("/leaderboard")
+def get_leaderboard():
+    results = []
+    for user, data in game.players.items():
+        bet = data["bet"]
+        won = data["won"]
+        profit = won - bet
+        roi = (profit / bet * 100) if bet > 0 else 0
+        
+        results.append({
+            "user": user,
+            "bet": bet,
+            "won": won,
+            "profit": profit,
+            "roi": round(roi, 2)
+        })
+    results.sort(key=lambda x: x["roi"], reverse=True)
+    return {"leaderboard": results}
+
+# --- 管理員專用 API ---
+
 @app.post("/admin/settle")
-def settle_game():
-    """階段 2：管理員觸發結算 (鎖定盤口並產生紅包)"""
+def settle_game(req: AdminRequest):
+    if req.secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="權限不足：密碼錯誤")
+
     with state_lock:
         if game.status != "OPEN":
             raise HTTPException(status_code=400, detail="只能在 OPEN 狀態下結算")
@@ -107,29 +159,14 @@ def settle_game():
         
         return {"msg": "結算完畢，進入搶奪階段", "total_envelopes": len(game.prize_pool)}
 
-@app.post("/grab")
-def grab_envelope(req: GrabRequest):
-    """階段 3：玩家搶紅包"""
+@app.post("/admin/reset")
+def reset_game(req: AdminRequest):
+    if req.secret != ADMIN_SECRET:
+        raise HTTPException(status_code=403, detail="權限不足：密碼錯誤")
+
     with state_lock:
-        if game.status != "GRABBING":
-            raise HTTPException(status_code=400, detail="目前無法搶奪紅包")
-            
-        player = game.players.get(req.user_id)
-        if not player or player["tickets"] <= 0:
-            raise HTTPException(status_code=400, detail="次數不足或未參與投注")
-
-        if not game.prize_pool:
-            game.status = "OPEN" # 搶完後重置回開放狀態 (簡化邏輯)
-            raise HTTPException(status_code=400, detail="紅包已經被搶光了")
-
-        # 扣除次數，取出紅包
-        player["tickets"] -= 1
-        won_amount = game.prize_pool.pop()
-        player["won"] += won_amount
-
-        return {
-            "msg": "搶奪成功",
-            "won_amount": won_amount,
-            "tickets_left": player["tickets"],
-            "total_won_so_far": player["won"]
-        }
+        game.status = "OPEN"
+        game.players = {}
+        game.prize_pool = []
+        game.total_pool = 0
+        return {"msg": "遊戲已重置"}

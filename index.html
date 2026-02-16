@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>搶紅包系統</title>
+    <title>搶紅包大挑戰</title>
     <style>
         body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         #app { width: 100%; max-width: 400px; height: 100vh; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; text-align: center; display: flex; flex-direction: column; }
@@ -22,16 +22,22 @@
 
         #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 100; }
         
-        #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; }
-        #admin-panel button { background: #333; padding: 5px 10px; font-size: 12px; }
+        /* 預設隱藏管理員面板 */
+        #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; display: none; }
+        #admin-panel button { background: #333; padding: 5px 10px; font-size: 12px; margin-left: 5px;}
+        
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #fff; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #ffebee; color: #d32f2f; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div id="screen-bet" class="screen active">
-        <h1>紅包大挑戰</h1>
-        <input type="text" id="username" placeholder="輸入玩家名稱 (例如: 紅包小偷)">
+        <h1>🧧 紅包大挑戰 🧧</h1>
+        <p>每 100 元可獲得 1 次搶奪機會</p>
+        <input type="text" id="username" placeholder="輸入玩家名稱 (例如: Louis)">
         <input type="number" id="bet-amount" placeholder="輸入投注金額 (100的倍數)" step="100" min="100">
         <button id="btn-bet" onclick="submitBet()">確認投注</button>
         <p id="bet-msg" style="color: red;"></p>
@@ -40,26 +46,54 @@
     <div id="screen-wait" class="screen">
         <h1>等待開局...</h1>
         <p>伺服器正在結算總獎金池</p>
-        <p id="wait-status">目前狀態: 輪詢中...</p>
+        <p id="wait-status">目前狀態: 連線中...</p>
     </div>
 
     <div id="screen-grab" class="screen" style="padding: 0;">
         <div class="status-bar">
-            玩家: <span id="display-name"></span> | 剩餘次數: <span id="display-tickets">0</span> | 已獲金額: <span id="display-won">0</span>
+            玩家: <span id="display-name"></span><br>
+            剩餘次數: <span id="display-tickets">0</span> | 已獲金額: <span id="display-won">0</span>
         </div>
         <div id="game-area"></div>
+    </div>
+
+    <div id="screen-leaderboard" class="screen">
+        <h1>🏆 最終獲利率排行榜 🏆</h1>
+        <div style="background: #fff; border-radius: 8px; padding: 5px; text-align: left; overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr><th>名次</th><th>玩家</th><th>投注</th><th>獲得</th><th>淨利</th><th>ROI</th></tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    </tbody>
+            </table>
+        </div>
+        <button style="margin-top: 20px;" onclick="window.location.reload()">重新載入頁面</button>
     </div>
 
     <div id="result-modal"></div>
 
     <div id="admin-panel">
-        <button onclick="adminSettle()">管理員: 強制結算</button>
+        <button onclick="adminSettle()">強制結算開局</button>
+        <button onclick="adminReset()" style="background: #d32f2f;">重置系統</button>
     </div>
 </div>
 
 <script>
-    // 這裡換成了你專屬的 ngrok 網址
+    // ⚠️ 部署前，請確認這是你最新運作中的 Ngrok URL
     const API_BASE = "https://untruckled-dalilah-twitchily.ngrok-free.dev"; 
+    
+    // Ngrok 繞過 Header 預設物件
+    const headers = {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning': 'true'
+    };
+    
+    // --- 【新增】暗門邏輯：檢查網址是否帶有 ?admin=true ---
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('admin') === 'true') {
+        document.getElementById('admin-panel').style.display = 'block';
+    }
     
     let currentUser = "";
     let myTickets = 0;
@@ -87,10 +121,7 @@
         try {
             const res = await fetch(`${API_BASE}/bet`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
-                },
+                headers: headers,
                 body: JSON.stringify({ user_id: user, amount: amount })
             });
             const data = await res.json();
@@ -115,11 +146,7 @@
     function startPolling() {
         pollingInterval = setInterval(async () => {
             try {
-                const res = await fetch(`${API_BASE}/status`, {
-                    headers: {
-                        'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
-                    }
-                });
+                const res = await fetch(`${API_BASE}/status`, { headers: headers });
                 const data = await res.json();
                 document.getElementById('wait-status').innerText = `總獎池: ${data.total_pool} 元 | 狀態: ${data.status}`;
                 
@@ -127,66 +154,13 @@
                     clearInterval(pollingInterval);
                     startGame();
                 }
-            } catch (err) {
-                console.error("輪詢失敗:", err);
-            }
+            } catch (err) { console.error("輪詢失敗:", err); }
         }, 1000);
-    }
-
-    async function grabEnvelope(envElement) {
-        if (myTickets <= 0 || isGrabbing) return;
-
-        envElement.style.pointerEvents = 'none';
-        envElement.style.display = 'none';
-        isGrabbing = true;
-
-        try {
-            const res = await fetch(`${API_BASE}/grab`, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
-                },
-                body: JSON.stringify({ user_id: currentUser })
-            });
-            const data = await res.json();
-
-            if (!res.ok) throw new Error(data.detail);
-
-            myTickets = data.tickets_left;
-            myTotalWon = data.total_won_so_far;
-            updateStatusBar();
-            showResultText(`搶到 ${data.won_amount} 元！`);
-
-            if (myTickets <= 0) endGame();
-
-        } catch (err) {
-            alert("搶奪失敗: " + err.message);
-            if(err.message === "紅包已經被搶光了") endGame();
-        } finally {
-            isGrabbing = false;
-        }
-    }
-
-    async function adminSettle() {
-        try {
-            const res = await fetch(`${API_BASE}/admin/settle`, { 
-                method: 'POST',
-                headers: {
-                    'ngrok-skip-browser-warning': 'true' // 繞過 ngrok 警告
-                }
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail);
-            alert("已強制結算，開局！");
-        } catch (err) {
-            alert("結算失敗: " + err.message);
-        }
     }
 
     function startGame() {
         switchScreen('screen-grab');
-        gameInterval = setInterval(createEnvelope, 500);
+        gameInterval = setInterval(createEnvelope, 400);
     }
 
     function createEnvelope() {
@@ -208,6 +182,83 @@
         setTimeout(() => { if(env.parentElement) env.remove(); }, duration * 1000);
     }
 
+    async function grabEnvelope(envElement) {
+        if (myTickets <= 0 || isGrabbing) return;
+
+        envElement.style.pointerEvents = 'none';
+        envElement.style.display = 'none';
+        isGrabbing = true;
+
+        try {
+            const res = await fetch(`${API_BASE}/grab`, {
+                method: 'POST',
+                headers: headers,
+                body: JSON.stringify({ user_id: currentUser })
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.detail);
+
+            myTickets = data.tickets_left;
+            myTotalWon = data.total_won_so_far;
+            updateStatusBar();
+            showResultText(`+${data.won_amount}`);
+
+            if (myTickets <= 0) endGame();
+
+        } catch (err) {
+            if(err.message === "紅包已經被搶光了") endGame();
+        } finally {
+            isGrabbing = false;
+        }
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        document.getElementById('game-area').innerHTML = '<h2 style="color: #d32f2f; margin-top: 80px;">你的次數已用盡！<br><br>等待其他玩家抽完...</h2>';
+        
+        const waitInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`${API_BASE}/status`, { headers: headers });
+                const data = await res.json();
+                
+                if (data.status === "FINISHED") {
+                    clearInterval(waitInterval);
+                    fetchLeaderboard();
+                }
+            } catch (err) { console.error(err); }
+        }, 1500);
+    }
+
+    async function fetchLeaderboard() {
+        switchScreen('screen-leaderboard');
+        try {
+            const res = await fetch(`${API_BASE}/leaderboard`, { headers: headers });
+            const data = await res.json();
+            
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+            
+            data.leaderboard.forEach((player, index) => {
+                const isMe = player.user === currentUser ? 'background-color: #fff9c4; font-weight: bold;' : '';
+                const color = player.profit >= 0 ? 'color: red;' : 'color: green;';
+                const sign = player.profit > 0 ? '+' : '';
+                
+                const tr = document.createElement('tr');
+                tr.style = isMe;
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${player.user}</td>
+                    <td>${player.bet}</td>
+                    <td>${player.won}</td>
+                    <td style="${color}">${sign}${player.profit}</td>
+                    <td style="${color}">${player.roi}%</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (err) { alert("無法取得排行榜: " + err.message); }
+    }
+
     function updateStatusBar() {
         document.getElementById('display-tickets').innerText = myTickets;
         document.getElementById('display-won').innerText = myTotalWon;
@@ -217,15 +268,42 @@
         const modal = document.getElementById('result-modal');
         modal.innerText = text;
         modal.style.display = 'block';
-        setTimeout(() => modal.style.display = 'none', 1000);
+        setTimeout(() => modal.style.display = 'none', 800);
     }
 
-    function endGame() {
-        clearInterval(gameInterval);
-        setTimeout(() => {
-            alert(`遊戲結束！你總共獲得了 ${myTotalWon} 元`);
-            window.location.reload(); 
-        }, 1000);
+    // --- 【修改】管理員專用 API (帶密碼驗證) ---
+    async function adminSettle() {
+        const secret = prompt("請輸入管理員密碼以強制結算：");
+        if (!secret) return;
+
+        try {
+            const res = await fetch(`${API_BASE}/admin/settle`, { 
+                method: 'POST', 
+                headers: headers,
+                body: JSON.stringify({ secret: secret })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail);
+            alert("已強制結算，所有玩家進入搶奪！");
+        } catch (err) { alert("結算失敗: " + err.message); }
+    }
+
+    async function adminReset() {
+        const secret = prompt("請輸入管理員密碼以重置系統：");
+        if (!secret) return;
+
+        if(!confirm("確定要重置整個遊戲並清空所有玩家資料嗎？")) return;
+        try {
+            const res = await fetch(`${API_BASE}/admin/reset`, { 
+                method: 'POST', 
+                headers: headers,
+                body: JSON.stringify({ secret: secret })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail);
+            alert("系統已重置！");
+            window.location.reload();
+        } catch (err) { alert("重置失敗: " + err.message); }
     }
 </script>
 </body>
