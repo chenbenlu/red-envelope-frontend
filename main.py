@@ -36,7 +36,7 @@ class GrabRequest(BaseModel):
     user_id: str
 
 # 管理員專用密碼與請求模型
-ADMIN_SECRET = "louis123"  # 預設密碼，請自行修改
+ADMIN_SECRET = "louis"  # 預設密碼，請自行修改
 
 class AdminRequest(BaseModel):
     secret: str

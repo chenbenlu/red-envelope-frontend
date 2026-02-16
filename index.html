@@ -3,144 +3,227 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>搶紅包大挑戰</title>
+    <title>搶紅包大挑戰 (炫炮極速版)</title>
     <style>
-        body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
-        #app { width: 100%; max-width: 400px; height: 100vh; background-color: #fff; box-shadow: 0 0 10px rgba(0,0,0,0.1); position: relative; text-align: center; display: flex; flex-direction: column; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        #app { width: 100%; max-width: 400px; height: 100vh; background-color: #1e1e1e; box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative; text-align: center; display: flex; flex-direction: column; }
         .screen { display: none; flex: 1; padding: 20px; flex-direction: column; justify-content: center; }
         .active { display: flex; }
-        h1 { color: #d32f2f; }
-        input { padding: 10px; font-size: 16px; width: 80%; margin-bottom: 10px; text-align: center; }
-        button { padding: 10px 20px; font-size: 18px; background-color: #d32f2f; color: white; border: none; border-radius: 5px; cursor: pointer; margin-bottom: 10px;}
-        button:disabled { background-color: #ccc; }
         
-        #game-area { position: relative; flex: 1; background-color: #ffebee; overflow: hidden; border-top: 2px solid #d32f2f; border-bottom: 2px solid #d32f2f; }
-        .status-bar { padding: 10px; background: #fff; font-weight: bold; }
+        h1 { color: #ff5252; text-shadow: 0 0 10px rgba(255, 82, 82, 0.5); }
+        input { padding: 12px; font-size: 16px; width: 100%; margin-bottom: 15px; text-align: center; box-sizing: border-box; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; }
+        button { padding: 12px 20px; font-size: 18px; background: linear-gradient(45deg, #ff5252, #fbc02d); color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-weight: bold; transition: transform 0.1s, box-shadow 0.1s; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background: #555; color: #888; cursor: not-allowed; }
         
-        .envelope { position: absolute; width: 50px; height: 70px; background-color: #d32f2f; color: gold; border-radius: 5px; display: flex; justify-content: center; align-items: center; font-weight: bold; cursor: pointer; user-select: none; animation: fall linear forwards; }
-        @keyframes fall { from { top: -80px; } to { top: 100%; } }
+        .status-bar { padding: 10px; background: #2c2c2c; font-weight: bold; font-size: 14px; line-height: 1.6; border-bottom: 2px solid #444; }
+        
+        /* 遊戲區域基礎設定 */
+        #game-area { position: relative; flex: 1; background-color: #2a2a2a; overflow: hidden; transition: background 0.3s, box-shadow 0.3s; }
+        
+        /* 🔥 炫炮外掛模式 (Overdrive) */
+        #game-area.overdrive {
+            background-color: #0d001a;
+            box-shadow: inset 0 0 50px #b000ff;
+            border-top: 2px solid #00e5ff;
+            border-bottom: 2px solid #00e5ff;
+            animation: cyber-strobe 0.5s infinite alternate;
+        }
+        @keyframes cyber-strobe {
+            0% { box-shadow: inset 0 0 30px #b000ff; border-color: #00e5ff; }
+            100% { box-shadow: inset 0 0 80px #ff0055; border-color: #ff0055; }
+        }
 
-        #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 20px; border-radius: 10px; z-index: 100; }
+        /* 紅包本體與動畫 */
+        .envelope { 
+            position: absolute; width: 55px; height: 75px; 
+            background: linear-gradient(135deg, #d32f2f, #ff1744); 
+            border: 2px solid #ffd700;
+            color: #ffd700; border-radius: 6px; 
+            display: flex; justify-content: center; align-items: center; 
+            font-size: 24px; font-weight: bold; cursor: pointer; user-select: none; 
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            animation: fall linear forwards, wiggle 0.4s infinite alternate; 
+        }
+        @keyframes fall { from { top: -100px; } to { top: 110%; } }
+        @keyframes wiggle { from { transform: rotate(-15deg) scale(1); } to { transform: rotate(15deg) scale(1.1); } }
         
-        /* 預設隱藏管理員面板 */
+        /* 點擊瞬間的碎裂/消失特效 */
+        .grabbed-effect { transform: scale(0.1) rotate(45deg); opacity: 0; transition: all 0.2s ease-out; pointer-events: none; }
+
+        /* 浮動金額數字 */
+        .floating-amount {
+            position: absolute; color: #00ffaa; font-size: 28px; font-weight: 900;
+            text-shadow: 0 0 10px #00ffaa, 0 0 20px #005500; pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards; z-index: 50;
+        }
+        @keyframes floatUp {
+            0% { transform: translate(-50%, 0) scale(0.5); opacity: 1; }
+            50% { transform: translate(-50%, -40px) scale(1.3); opacity: 1; }
+            100% { transform: translate(-50%, -80px) scale(1); opacity: 0; }
+        }
+
+        /* 畫面震動 */
+        .shake { animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: #00e5ff; padding: 20px; border-radius: 10px; z-index: 100; font-size: 28px; font-weight: bold; border: 2px solid #00e5ff; box-shadow: 0 0 20px #00e5ff; text-align: center;}
+        
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #222; font-size: 14px; }
+        th, td { border: 1px solid #444; padding: 8px; text-align: center; }
+        th { background-color: #333; color: #ff5252; }
+        
+        .raise-box { background: #333; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #fbc02d; box-shadow: 0 0 10px rgba(251, 192, 45, 0.2); }
+        
+        /* 開關按鈕美化 */
+        .toggle-label { cursor: pointer; color: #00e5ff; font-weight: bold; display: inline-flex; align-items: center; gap: 8px; text-shadow: 0 0 5px #00e5ff; transition: color 0.3s; }
+        .toggle-label:hover { color: #ff0055; text-shadow: 0 0 10px #ff0055; }
+        input[type="checkbox"] { transform: scale(1.5); accent-color: #ff0055; cursor: pointer; }
+
         #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; display: none; }
-        #admin-panel button { background: #333; padding: 5px 10px; font-size: 12px; margin-left: 5px;}
-        
-        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #fff; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
-        th { background-color: #ffebee; color: #d32f2f; }
+        #admin-panel button { background: #111; border: 1px solid #444; padding: 5px 10px; font-size: 12px; margin-left: 5px; color: #aaa; box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div id="app">
     <div id="screen-bet" class="screen active">
-        <h1>🧧 紅包大挑戰 🧧</h1>
-        <p>每 100 元可獲得 1 次搶奪機會</p>
-        <input type="text" id="username" placeholder="輸入玩家名稱 (例如: Louis)">
-        <input type="number" id="bet-amount" placeholder="輸入投注金額 (100的倍數)" step="100" min="100">
-        <button id="btn-bet" onclick="submitBet()">確認投注</button>
-        <p id="bet-msg" style="color: red;"></p>
+        <h1>🧧 賽博紅包大戰 🧧</h1>
+        <p style="color: #aaa;">每 100 元 = 1 次駭入機會</p>
+        <input type="text" id="username" placeholder="輸入代號 (例如: Neo)">
+        <input type="number" id="bet-amount" placeholder="注入資金 (100的倍數)" step="100" min="100">
+        <button id="btn-bet" onclick="submitBet()">確認連接系統</button>
+        <p id="bet-msg" style="color: #ff5252;"></p>
     </div>
 
     <div id="screen-wait" class="screen">
-        <h1>等待開局...</h1>
-        <p>伺服器正在結算總獎金池</p>
-        <p id="wait-status">目前狀態: 連線中...</p>
+        <h1>連線就緒...</h1>
+        <p id="wait-status" style="font-weight: bold; color: #00e5ff; text-shadow: 0 0 5px #00e5ff;">狀態: 掃描節點中...</p>
+        
+        <div class="raise-box">
+            <h3 style="margin-top: 0; color: #fbc02d;">🔥 資源不足？追加算力！</h3>
+            <p>目前總資金: <span id="display-current-bet" style="color:#00ffaa; font-weight:bold; font-size:18px;">0</span></p>
+            <p>累積駭入次數: <span id="display-current-tickets" style="color:#00ffaa; font-weight:bold; font-size:18px;">0</span></p>
+            <input type="number" id="raise-amount" placeholder="追加資金 (100的倍數)" step="100" min="100">
+            <button id="btn-raise" onclick="submitRaise()" style="width: 100%; background: linear-gradient(45deg, #fbc02d, #f57f17); color: #000;">追加算力</button>
+            <p id="raise-msg" style="color: #ff5252; margin-bottom: 0;"></p>
+        </div>
     </div>
 
     <div id="screen-grab" class="screen" style="padding: 0;">
         <div class="status-bar">
-            玩家: <span id="display-name"></span><br>
-            剩餘次數: <span id="display-tickets">0</span> | 已獲金額: <span id="display-won">0</span>
+            代號: <span id="display-name" style="color:#fbc02d;"></span> | 剩餘次數: <span id="display-tickets" style="font-size:18px; color:#00ffaa;">0</span><br>
+            已奪取資金: <span id="display-won" style="color: #ff5252; font-size: 22px; text-shadow: 0 0 5px #ff5252;">0</span>
+            <hr style="margin: 8px 0; border-color: #444;">
+            <label class="toggle-label">
+                <input type="checkbox" id="auto-grab-toggle"> ⚡ 啟動極速駭入外掛 (AUTO-BOT)
+            </label>
         </div>
         <div id="game-area"></div>
     </div>
 
     <div id="screen-leaderboard" class="screen">
-        <h1>🏆 最終獲利率排行榜 🏆</h1>
-        <div style="background: #fff; border-radius: 8px; padding: 5px; text-align: left; overflow-x: auto;">
+        <h1 style="color: #00e5ff; text-shadow: 0 0 10px #00e5ff;">🏆 伺服器結算報告 🏆</h1>
+        <div style="background: #1a1a1a; border-radius: 8px; padding: 5px; text-align: left; overflow-x: auto; border: 1px solid #333;">
             <table>
                 <thead>
-                    <tr><th>名次</th><th>玩家</th><th>投注</th><th>獲得</th><th>淨利</th><th>ROI</th></tr>
+                    <tr><th>排名</th><th>代號</th><th>投入</th><th>奪取</th><th>淨利</th><th>ROI</th></tr>
                 </thead>
-                <tbody id="leaderboard-body">
-                    </tbody>
+                <tbody id="leaderboard-body"></tbody>
             </table>
         </div>
-        <button style="margin-top: 20px;" onclick="window.location.reload()">重新載入頁面</button>
+        <button style="margin-top: 20px; background: #333; color: #fff;" onclick="window.location.reload()">中斷連線 (重新開始)</button>
     </div>
 
     <div id="result-modal"></div>
 
     <div id="admin-panel">
-        <button onclick="adminSettle()">強制結算開局</button>
-        <button onclick="adminReset()" style="background: #d32f2f;">重置系統</button>
+        <button onclick="adminSettle()">強制引爆</button>
+        <button onclick="adminReset()">格式化系統</button>
     </div>
 </div>
 
 <script>
-    // ⚠️ 部署前，請確認這是你最新運作中的 Ngrok URL
+    // ⚠️ 替換成你的 Ngrok 網址
     const API_BASE = "https://untruckled-dalilah-twitchily.ngrok-free.dev"; 
     
-    // Ngrok 繞過 Header 預設物件
     const headers = {
         'Content-Type': 'application/json',
         'ngrok-skip-browser-warning': 'true'
     };
     
-    // --- 【新增】暗門邏輯：檢查網址是否帶有 ?admin=true ---
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('admin') === 'true') {
+    // 暗門
+    if (new URLSearchParams(window.location.search).get('admin') === 'true') {
         document.getElementById('admin-panel').style.display = 'block';
     }
     
     let currentUser = "";
+    let myTotalBet = 0;
     let myTickets = 0;
     let myTotalWon = 0;
-    let gameInterval = null;
+    let dropTimer = null;
     let pollingInterval = null;
     let isGrabbing = false;
+    let currentDropSpeed = 400; // 預設掉落間隔
 
     function switchScreen(screenId) {
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
     }
 
+    // --- API: 投注與加注 ---
     async function submitBet() {
         const user = document.getElementById('username').value.trim();
         const amount = parseInt(document.getElementById('bet-amount').value, 10);
         const msgEl = document.getElementById('bet-msg');
 
-        if (!user) { msgEl.innerText = "請輸入玩家名稱！"; return; }
-        if (isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "請輸入 100 的倍數！"; return; }
+        if (!user || isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "參數錯誤！需為100的倍數"; return; }
 
         document.getElementById('btn-bet').disabled = true;
-        msgEl.innerText = "連線中...";
+        msgEl.innerText = "正在建立通道...";
 
         try {
-            const res = await fetch(`${API_BASE}/bet`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({ user_id: user, amount: amount })
-            });
+            const res = await fetch(`${API_BASE}/bet`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: user, amount: amount }) });
             const data = await res.json();
+            if (!res.ok) throw new Error(data.detail);
 
-            if (!res.ok) throw new Error(data.detail || "投注失敗");
-
-            currentUser = user;
-            myTickets = data.tickets;
-            myTotalWon = 0;
+            currentUser = user; myTickets = data.tickets; myTotalBet = data.total_bet; myTotalWon = 0;
             document.getElementById('display-name').innerText = currentUser;
-            updateStatusBar();
-            
+            updateWaitScreenInfo();
             switchScreen('screen-wait');
             startPolling(); 
+        } catch (err) { msgEl.innerText = err.message; document.getElementById('btn-bet').disabled = false; }
+    }
 
-        } catch (err) {
-            msgEl.innerText = err.message;
-            document.getElementById('btn-bet').disabled = false;
-        }
+    async function submitRaise() {
+        const amount = parseInt(document.getElementById('raise-amount').value, 10);
+        const msgEl = document.getElementById('raise-msg');
+        const btn = document.getElementById('btn-raise');
+
+        if (isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "無效的資金"; return; }
+        btn.disabled = true; msgEl.innerText = "追加中...";
+
+        try {
+            const res = await fetch(`${API_BASE}/bet`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser, amount: amount }) });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.detail);
+
+            myTickets = data.tickets; myTotalBet = data.total_bet; updateWaitScreenInfo();
+            document.getElementById('raise-amount').value = '';
+            msgEl.innerText = "✅ 算力已升級";
+            setTimeout(() => { msgEl.innerText = ""; }, 2000);
+        } catch (err) { msgEl.innerText = err.message; } finally { btn.disabled = false; }
+    }
+
+    function updateWaitScreenInfo() {
+        document.getElementById('display-current-bet').innerText = myTotalBet;
+        document.getElementById('display-current-tickets').innerText = myTickets;
+        updateStatusBar();
     }
 
     function startPolling() {
@@ -148,32 +231,51 @@
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
                 const data = await res.json();
-                document.getElementById('wait-status').innerText = `總獎池: ${data.total_pool} 元 | 狀態: ${data.status}`;
-                
+                document.getElementById('wait-status').innerText = `總資金池: ${data.total_pool} | 狀態: ${data.status}`;
                 if (data.status === "GRABBING") {
                     clearInterval(pollingInterval);
                     startGame();
                 }
-            } catch (err) { console.error("輪詢失敗:", err); }
+            } catch (err) { console.error(err); }
         }, 1000);
     }
 
+    // --- 🎮 炫炮遊戲引擎 ---
     function startGame() {
         switchScreen('screen-grab');
-        gameInterval = setInterval(createEnvelope, 400);
+        scheduleNextDrop();
     }
 
-    function createEnvelope() {
-        if (myTickets <= 0) { clearInterval(gameInterval); return; }
+    // 遞迴呼叫來控制掉落速度 (配合外掛模式加速)
+    function scheduleNextDrop() {
+        if (myTickets <= 0) return;
+        createEnvelope();
+        dropTimer = setTimeout(scheduleNextDrop, currentDropSpeed);
+    }
 
+    // 監聽外掛開關
+    document.getElementById('auto-grab-toggle').addEventListener('change', (e) => {
+        const area = document.getElementById('game-area');
+        if(e.target.checked) {
+            area.classList.add('overdrive'); // 啟動霓虹背景
+            currentDropSpeed = 80; // 掉落速度飆升 5 倍
+            showResultText("⚡ OVERDRIVE 啟動 ⚡");
+        } else {
+            area.classList.remove('overdrive');
+            currentDropSpeed = 400; // 恢復正常
+        }
+    });
+
+    function createEnvelope() {
         const area = document.getElementById('game-area');
         const env = document.createElement('div');
         env.className = 'envelope';
         env.innerText = '🧧';
         
-        const leftPos = Math.random() * (area.clientWidth - 50);
-        env.style.left = leftPos + 'px';
-        const duration = Math.random() * 1.5 + 1.5;
+        env.style.left = (Math.random() * (area.clientWidth - 55)) + 'px';
+        // 外掛模式下，不僅掉落頻繁，掉落速度(CSS animation)也變快
+        const isOverdrive = document.getElementById('auto-grab-toggle').checked;
+        const duration = isOverdrive ? (Math.random() * 0.8 + 0.8) : (Math.random() * 1.5 + 1.5);
         env.style.animationDuration = duration + 's';
 
         env.onclick = () => grabEnvelope(env);
@@ -182,27 +284,52 @@
         setTimeout(() => { if(env.parentElement) env.remove(); }, duration * 1000);
     }
 
-    async function grabEnvelope(envElement) {
-        if (myTickets <= 0 || isGrabbing) return;
+    // --- 畫面震動與浮動文字特效 ---
+    function triggerScreenShake() {
+        const app = document.getElementById('app');
+        app.classList.remove('shake');
+        void app.offsetWidth; // 觸發 reflow 讓動畫可重複執行
+        app.classList.add('shake');
+    }
 
-        envElement.style.pointerEvents = 'none';
-        envElement.style.display = 'none';
+    function spawnFloatingNumber(amount, x, y) {
+        const area = document.getElementById('game-area');
+        const floatText = document.createElement('div');
+        floatText.className = 'floating-amount';
+        floatText.innerText = `+💰${amount}`;
+        floatText.style.left = x;
+        floatText.style.top = y;
+        area.appendChild(floatText);
+        setTimeout(() => floatText.remove(), 800);
+    }
+
+    async function grabEnvelope(envElement) {
+        if (myTickets <= 0 || isGrabbing || envElement.classList.contains('grabbed')) return;
+        
+        // 標記並觸發碎裂特效
+        envElement.classList.add('grabbed');
+        envElement.classList.add('grabbed-effect');
+        
+        // 記錄被點擊時的位置，給浮動數字用
+        const rect = envElement.getBoundingClientRect();
+        const areaRect = document.getElementById('game-area').getBoundingClientRect();
+        const relativeX = (rect.left - areaRect.left + 27) + 'px'; // +27 讓數字置中
+        const relativeY = (rect.top - areaRect.top) + 'px';
+
         isGrabbing = true;
 
         try {
-            const res = await fetch(`${API_BASE}/grab`, {
-                method: 'POST',
-                headers: headers,
-                body: JSON.stringify({ user_id: currentUser })
-            });
+            const res = await fetch(`${API_BASE}/grab`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser }) });
             const data = await res.json();
-
             if (!res.ok) throw new Error(data.detail);
 
             myTickets = data.tickets_left;
             myTotalWon = data.total_won_so_far;
             updateStatusBar();
-            showResultText(`+${data.won_amount}`);
+            
+            // API 回傳成功，噴出特效與數字
+            triggerScreenShake();
+            spawnFloatingNumber(data.won_amount, relativeX, relativeY);
 
             if (myTickets <= 0) endGame();
 
@@ -213,15 +340,27 @@
         }
     }
 
+    // --- 🤖 終極自動代搶外掛 (50ms 極速掃描) ---
+    setInterval(() => {
+        const autoToggle = document.getElementById('auto-grab-toggle');
+        if (autoToggle && autoToggle.checked && myTickets > 0 && !isGrabbing) {
+            // 尋找畫面上還沒被點擊的紅包
+            const targets = document.querySelectorAll('.envelope:not(.grabbed)');
+            if (targets.length > 0) {
+                targets[0].click(); // 秒殺第一個目標
+            }
+        }
+    }, 50);
+
+    // --- 結算 ---
     function endGame() {
-        clearInterval(gameInterval);
-        document.getElementById('game-area').innerHTML = '<h2 style="color: #d32f2f; margin-top: 80px;">你的次數已用盡！<br><br>等待其他玩家抽完...</h2>';
+        clearTimeout(dropTimer);
+        document.getElementById('game-area').innerHTML = '<h2 style="color: #00e5ff; margin-top: 80px; text-shadow: 0 0 10px #00e5ff;">次數用盡！<br><br>等待系統最終結算...</h2>';
         
         const waitInterval = setInterval(async () => {
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
                 const data = await res.json();
-                
                 if (data.status === "FINISHED") {
                     clearInterval(waitInterval);
                     fetchLeaderboard();
@@ -240,9 +379,8 @@
             tbody.innerHTML = '';
             
             data.leaderboard.forEach((player, index) => {
-                const isMe = player.user === currentUser ? 'background-color: #fff9c4; font-weight: bold;' : '';
-                const color = player.profit >= 0 ? 'color: red;' : 'color: green;';
-                const sign = player.profit > 0 ? '+' : '';
+                const isMe = player.user === currentUser ? 'background-color: rgba(255,215,0,0.2); font-weight: bold; border-left: 4px solid #ffd700;' : '';
+                const color = player.profit >= 0 ? 'color: #ff5252;' : 'color: #00ffaa;';
                 
                 const tr = document.createElement('tr');
                 tr.style = isMe;
@@ -251,7 +389,7 @@
                     <td>${player.user}</td>
                     <td>${player.bet}</td>
                     <td>${player.won}</td>
-                    <td style="${color}">${sign}${player.profit}</td>
+                    <td style="${color}">${player.profit > 0 ? '+'+player.profit : player.profit}</td>
                     <td style="${color}">${player.roi}%</td>
                 `;
                 tbody.appendChild(tr);
@@ -271,39 +409,24 @@
         setTimeout(() => modal.style.display = 'none', 800);
     }
 
-    // --- 【修改】管理員專用 API (帶密碼驗證) ---
+    // --- 管理員 API ---
     async function adminSettle() {
-        const secret = prompt("請輸入管理員密碼以強制結算：");
+        const secret = prompt("系統授權碼：");
         if (!secret) return;
-
         try {
-            const res = await fetch(`${API_BASE}/admin/settle`, { 
-                method: 'POST', 
-                headers: headers,
-                body: JSON.stringify({ secret: secret })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail);
-            alert("已強制結算，所有玩家進入搶奪！");
-        } catch (err) { alert("結算失敗: " + err.message); }
+            const res = await fetch(`${API_BASE}/admin/settle`, { method: 'POST', headers: headers, body: JSON.stringify({ secret: secret }) });
+            if (!res.ok) throw new Error((await res.json()).detail);
+        } catch (err) { alert(err.message); }
     }
 
     async function adminReset() {
-        const secret = prompt("請輸入管理員密碼以重置系統：");
-        if (!secret) return;
-
-        if(!confirm("確定要重置整個遊戲並清空所有玩家資料嗎？")) return;
+        const secret = prompt("系統授權碼：");
+        if (!secret || !confirm("警告：即將銷毀所有節點資料？")) return;
         try {
-            const res = await fetch(`${API_BASE}/admin/reset`, { 
-                method: 'POST', 
-                headers: headers,
-                body: JSON.stringify({ secret: secret })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.detail);
-            alert("系統已重置！");
+            const res = await fetch(`${API_BASE}/admin/reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret: secret }) });
+            if (!res.ok) throw new Error((await res.json()).detail);
             window.location.reload();
-        } catch (err) { alert("重置失敗: " + err.message); }
+        } catch (err) { alert(err.message); }
     }
 </script>
 </body>
