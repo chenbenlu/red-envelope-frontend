@@ -3,190 +3,335 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>搶紅包大挑戰</title>
+    <title>迎春搶紅包大賽 (Cyberpunk Edition)</title>
     <style>
         body { margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: manipulation; }
-        #app { width: 100%; max-width: 400px; height: 100vh; background-color: #1e1e1e; box-shadow: 0 0 20px rgba(0,0,0,0.8); position: relative; text-align: center; display: flex; flex-direction: column; }
+        #app { width: 100%; max-width: 400px; height: 100vh; background-color: #1e1e1e; box-shadow: 0 0 20px rgba(0,229,255,0.2); position: relative; text-align: center; display: flex; flex-direction: column; }
         .screen { display: none; flex: 1; padding: 20px; flex-direction: column; justify-content: center; }
         .active { display: flex; }
         
-        h1 { color: #ff5252; text-shadow: 0 0 10px rgba(255, 82, 82, 0.5); font-size: 24px; }
-        input[type="text"], input[type="number"] { padding: 12px; font-size: 16px; width: 100%; margin-bottom: 15px; text-align: center; box-sizing: border-box; background: #333; border: 1px solid #555; color: #fff; border-radius: 8px; }
-        button { padding: 12px 20px; font-size: 16px; background: linear-gradient(45deg, #ff5252, #fbc02d); color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-weight: bold; transition: transform 0.1s; }
+        /* ========================================= */
+        /* 【新增】全服大戶廣播特效 (Toast) */
+        /* ========================================= */
+        #global-toast {
+            position: absolute; 
+            top: -80px; /* 預設隱藏在畫面上方 */
+            left: 50%; 
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); 
+            color: #ffcc00;
+            padding: 12px 25px; 
+            border-radius: 30px; 
+            font-weight: bold; 
+            font-size: 15px;
+            z-index: 1000; 
+            border: 2px solid #ffd700;
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.8), inset 0 0 10px rgba(255, 0, 85, 0.5);
+            transition: top 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            white-space: nowrap; 
+            text-shadow: 0 0 5px #ff5252; 
+        }
+        .toast-show { top: 30px !important; } /* 觸發時掉下來 */
+
+        h1 { color: #ff5252; text-shadow: 0 0 10px rgba(255, 82, 82, 0.8); font-size: 26px; font-weight: 900; letter-spacing: 2px; }
+        input[type="text"], input[type="number"] { padding: 12px; font-size: 16px; width: 100%; margin-bottom: 15px; text-align: center; box-sizing: border-box; background: #333; border: 1px solid #555; color: #00e5ff; border-radius: 8px; font-weight: bold; transition: border 0.3s; }
+        input:focus { border-color: #00e5ff; outline: none; box-shadow: 0 0 8px rgba(0,229,255,0.5); }
+        input::placeholder { color: #888; font-weight: normal; }
+        
+        button { padding: 12px 20px; font-size: 16px; background: linear-gradient(45deg, #ff5252, #fbc02d); color: white; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 10px; font-weight: bold; transition: transform 0.1s; width: 100%;}
         button:active { transform: scale(0.95); }
         button:disabled { background: #555; color: #888; cursor: not-allowed; }
         
-        /* 手機版狀態列最佳化 */
-        .status-bar { padding: 10px 15px; background: #2c2c2c; font-weight: bold; border-bottom: 2px solid #444; }
+        .wallet-card { background: #111; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0,229,255,0.2); border: 1px solid #00e5ff; position: relative; overflow: hidden; }
+        .wallet-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,229,255,0.2), transparent); animation: scanline 3s infinite linear; }
+        @keyframes scanline { 0% { left: -100%; } 100% { left: 200%; } }
+        .wallet-balance { font-size: 36px; font-weight: bold; color: #00ffaa; text-shadow: 0 0 10px rgba(0,255,170,0.5); margin-top: 5px; font-family: monospace;}
+        
+        .dashboard-info { display: flex; justify-content: space-between; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
+        .info-block { flex: 1; }
+        .info-title { font-size: 12px; color: #aaa; margin-bottom: 5px; }
+        .info-value { font-size: 20px; font-weight: bold; color: #00e5ff; font-family: monospace; }
+        
+        .nav-btn { background: #2a2a2a; border: 1px solid #555; padding: 15px; border-radius: 8px; font-size: 16px; color: #fff; margin-bottom: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;}
+        .nav-btn:hover { border-color: #00e5ff; box-shadow: 0 0 10px rgba(0,229,255,0.2); }
+        .nav-btn:active { background: #333; transform: scale(0.98); }
+        .nav-btn-icon { font-size: 20px; color: #00e5ff; }
+        
+        .status-bar { padding: 10px 15px; background: #111; font-weight: bold; border-bottom: 1px solid #00e5ff; }
         .status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
-        .status-won { font-size: 20px; color: #ff5252; text-shadow: 0 0 5px #ff5252; margin-bottom: 10px; }
-        
-        /* 小巧型控制面板 */
         .controls-row { display: flex; justify-content: space-between; gap: 10px; }
-        .compact-btn { flex: 1; padding: 8px 5px; font-size: 13px; border-radius: 6px; background: #444; color: #fff; border: 1px solid #555; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; }
-        .compact-btn.active-toggle { background: #b000ff; border-color: #00e5ff; box-shadow: 0 0 10px #b000ff; color: #fff; }
         
-        /* 遊戲區域 */
+        .compact-btn { flex: 1; padding: 8px 5px; font-size: 14px; border-radius: 6px; background: #333; color: #fff; border: 1px solid #555; display: flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; transition: 0.2s; font-weight: bold;}
+        .compact-btn:active { transform: scale(0.95); }
+        .compact-btn.active-toggle { background: #b000ff; color: #fff; border-color: #00e5ff; box-shadow: 0 0 15px #b000ff; text-shadow: 0 0 5px #fff;}
+        
         #game-area { position: relative; flex: 1; background-color: #2a2a2a; overflow: hidden; transition: background 0.3s, box-shadow 0.3s; }
-        #game-area.overdrive { background-color: #0d001a; box-shadow: inset 0 0 30px #b000ff; border-top: 2px solid #00e5ff; border-bottom: 2px solid #00e5ff; animation: cyber-strobe 0.5s infinite alternate; }
-        @keyframes cyber-strobe { 0% { box-shadow: inset 0 0 20px #b000ff; } 100% { box-shadow: inset 0 0 50px #ff0055; } }
+        #game-area.overdrive { background-color: #0d001a; box-shadow: inset 0 0 40px #b000ff; border-top: 1px solid #00e5ff; border-bottom: 1px solid #00e5ff; animation: cyber-strobe 0.5s infinite alternate; }
+        @keyframes cyber-strobe { 0% { box-shadow: inset 0 0 20px #b000ff; } 100% { box-shadow: inset 0 0 60px #ff0055; } }
 
-        /* 紅包與特效 */
         .envelope { position: absolute; width: 45px; height: 60px; background: linear-gradient(135deg, #d32f2f, #ff1744); border: 2px solid #ffd700; color: #ffd700; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; cursor: pointer; user-select: none; box-shadow: 0 0 10px rgba(255, 215, 0, 0.5); animation: fall linear forwards, wiggle 0.4s infinite alternate; }
         @keyframes fall { from { top: -80px; } to { top: 110%; } }
         @keyframes wiggle { from { transform: rotate(-15deg) scale(1); } to { transform: rotate(15deg) scale(1.1); } }
         .grabbed-effect { transform: scale(0.1) rotate(45deg); opacity: 0; transition: all 0.2s ease-out; pointer-events: none; }
         
-        .floating-amount { position: absolute; color: #00ffaa; font-size: 24px; font-weight: 900; text-shadow: 0 0 10px #00ffaa, 0 0 20px #005500; pointer-events: none; animation: floatUp 0.6s ease-out forwards; z-index: 50; }
+        .floating-amount { position: absolute; color: #00ffaa; font-size: 28px; font-weight: 900; text-shadow: 0 0 10px #00ffaa, 0 0 20px #005500; pointer-events: none; animation: floatUp 0.6s ease-out forwards; z-index: 50; font-family: monospace;}
         @keyframes floatUp { 0% { transform: translate(-50%, 0) scale(0.5); opacity: 1; } 50% { transform: translate(-50%, -30px) scale(1.2); opacity: 1; } 100% { transform: translate(-50%, -60px) scale(1); opacity: 0; } }
-
         .shake { animation: shake 0.2s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes shake { 10%, 90% { transform: translate3d(-1px, 0, 0); } 20%, 80% { transform: translate3d(2px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-4px, 0, 0); } 40%, 60% { transform: translate3d(4px, 0, 0); } }
 
-        #result-modal { display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.9); color: #00e5ff; padding: 15px 30px; border-radius: 10px; z-index: 100; font-size: 24px; font-weight: bold; border: 2px solid #00e5ff; box-shadow: 0 0 20px #00e5ff; text-align: center; white-space: nowrap;}
+        #result-modal { display: none; position: absolute; top: 10%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); color: #00e5ff; padding: 10px 20px; border-radius: 10px; z-index: 100; font-size: 16px; font-weight: bold; border: 1px solid #00e5ff; text-align: center; white-space: nowrap; box-shadow: 0 0 15px rgba(0,229,255,0.5);}
         
-        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #222; font-size: 13px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 15px; background: #111; font-size: 13px; }
         th, td { border: 1px solid #444; padding: 6px; text-align: center; }
-        th { background-color: #333; color: #ff5252; }
+        th { background-color: #222; color: #ff5252; }
         
-        .raise-box { background: #333; padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px dashed #fbc02d; box-shadow: 0 0 10px rgba(251, 192, 45, 0.2); }
+        .action-box { background: #222; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; }
+        .back-btn { background: #333; color: #aaa; border: 1px solid #555; }
         
-        #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; display: none; }
-        #admin-panel button { background: #111; border: 1px solid #444; padding: 5px 10px; font-size: 12px; margin-left: 5px; color: #aaa; box-shadow: none; margin-bottom: 0;}
+        #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; display: none; z-index: 200;}
+        #admin-panel button { width: auto; background: #111; border: 1px solid #555; padding: 5px 10px; font-size: 12px; margin-left: 5px; color: #aaa; margin-bottom: 0; box-shadow: none;}
+        #admin-left { position: absolute; bottom: 10px; left: 10px; font-size: 12px; display: none; z-index: 200; }
+        #admin-left button { width: auto; background: #111; border: 1px solid #00ffaa; padding: 5px 10px; font-size: 12px; color: #00ffaa; margin-bottom: 0; box-shadow: none; }
     </style>
 </head>
 <body>
 
 <div id="app">
-    <div id="screen-bet" class="screen active">
-        <h1>🧧 賽博紅包大戰 🧧</h1>
-        <p style="color: #aaa; font-size: 14px;">100 元 = 1 次駭入權限</p>
-        <input type="text" id="username" placeholder="輸入代號 (例如: Neo)">
-        <input type="number" id="bet-amount" placeholder="注入資金 (100的倍數)" step="100" min="100">
-        <button id="btn-bet" onclick="submitBet()">確認連接系統</button>
-        <p id="bet-msg" style="color: #ff5252; font-size: 14px;"></p>
+    <div id="global-toast">📢 財神廣播測試</div>
+
+    <div id="screen-login" class="screen active">
+        <h1>🧧 迎春搶紅包大賽 🧧</h1>
+        <p style="color: #00e5ff; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(0,229,255,0.5);">新年發大財！請先綁定您的錢包</p>
+        <input type="text" id="username" placeholder="輸入玩家暱稱">
+        <button id="btn-login" onclick="login()" style="background: linear-gradient(45deg, #00e5ff, #0077ff); border: 1px solid #00e5ff; box-shadow: 0 0 10px rgba(0,229,255,0.3);">進入大廳</button>
+        <p id="login-msg" style="color: #ff5252; font-size: 14px; font-weight: bold;"></p>
     </div>
 
-    <div id="screen-wait" class="screen">
-        <h2 style="margin-top: 0;">連線就緒...</h2>
-        <p id="wait-status" style="font-weight: bold; color: #00e5ff; text-shadow: 0 0 5px #00e5ff;">狀態: 掃描節點中...</p>
-        
-        <div class="raise-box">
-            <h4 style="margin-top: 0; color: #fbc02d;">🔥 追加算力</h4>
-            <div style="display: flex; justify-content: space-between; font-size: 14px; margin-bottom: 10px;">
-                <span>總資金: <span id="display-current-bet" style="color:#00ffaa; font-weight:bold;">0</span></span>
-                <span>權限: <span id="display-current-tickets" style="color:#00ffaa; font-weight:bold;">0</span> 抽</span>
-            </div>
-            <input type="number" id="raise-amount" placeholder="追加資金 (100倍數)" step="100" min="100">
-            <button id="btn-raise" onclick="submitRaise()" style="width: 100%; background: linear-gradient(45deg, #fbc02d, #f57f17); color: #000; padding: 10px;">確認追加</button>
-            <p id="raise-msg" style="color: #ff5252; margin-bottom: 0; font-size: 13px;"></p>
+    <div id="screen-lobby" class="screen" style="justify-content: flex-start; padding-top: 30px;">
+        <div class="wallet-card">
+            <div style="font-size: 14px; color: #aaa; font-weight: bold;">玩家代號: <span id="lobby-name" style="color:#00e5ff;"></span></div>
+            <div style="margin-top: 5px; font-size: 14px; color: #ccc;">目前錢包餘額</div>
+            <div class="wallet-balance">$ <span id="lobby-wallet">0</span></div>
         </div>
+
+        <div class="dashboard-info">
+            <div class="info-block" style="border-right: 1px solid #444;">
+                <div class="info-title">本局已投入 (元)</div>
+                <div class="info-value" id="lobby-bet" style="color: #fff;">0</div>
+            </div>
+            <div class="info-block" style="padding-left: 15px;">
+                <div class="info-title">持有紅包 (個)</div>
+                <div class="info-value" id="lobby-tickets" style="color:#ff5252; text-shadow: 0 0 5px rgba(255,82,82,0.5);">0</div>
+            </div>
+        </div>
+
+        <p id="wait-status" style="font-weight: bold; color: #00ffaa; margin-bottom: 20px; font-size: 16px; font-family: monospace;">等待伺服器開局...</p>
+        
+        <div class="nav-btn" onclick="openScreen('screen-recharge')">
+            <div>💳 前往儲值中心</div>
+            <div class="nav-btn-icon">➔</div>
+        </div>
+        <div class="nav-btn" onclick="openScreen('screen-action')" style="border-color: #ff5252;">
+            <div style="color: #ff5252;">🧧 購買紅包 / 贊助</div>
+            <div class="nav-btn-icon" style="color: #ff5252;">➔</div>
+        </div>
+    </div>
+
+    <div id="screen-recharge" class="screen">
+        <h2 style="color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5);">💳 儲值中心</h2>
+        <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">儲值後即可購買紅包</p>
+        <input type="number" id="input-recharge" placeholder="輸入儲值金額 (元)" min="1">
+        <button onclick="recharge()" style="background: linear-gradient(45deg, #00e5ff, #0077ff); border: 1px solid #00e5ff;">確認儲值</button>
+        <button class="back-btn" onclick="openScreen('screen-lobby')">返回大廳</button>
+        <p id="recharge-msg" style="color: #ff5252; font-size: 14px; margin-top: 15px; font-weight: bold;"></p>
+    </div>
+
+    <div id="screen-action" class="screen">
+        <h2 style="color: #ff5252; text-shadow: 0 0 10px rgba(255,82,82,0.5);">🧧 購買與贊助</h2>
+        <p style="color: #aaa; font-size: 14px; margin-bottom: 5px;">錢包餘額: <span id="action-wallet-display" style="color: #00ffaa; font-weight:bold; font-family: monospace;">0</span></p>
+        <p style="color: #777; font-size: 12px; margin-bottom: 20px;">1 個紅包 = 100 元</p>
+        
+        <input type="number" id="input-action" placeholder="輸入購買數量 (個)" min="1" step="1">
+        
+        <div style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 10px;">
+            <button onclick="bet()" style="flex: 1; font-size:14px;">🧧 買紅包</button>
+            <button onclick="donate()" style="flex: 1; background: #222; color: #fff; border: 1px solid #00ffaa; font-size:14px; text-shadow: 0 0 5px #00ffaa;">💸 無償贊助獎池</button>
+        </div>
+        <button class="back-btn" onclick="openScreen('screen-lobby')">返回大廳等待</button>
+        <p id="action-msg" style="color: #ff5252; font-size: 14px; margin-top: 15px; font-weight: bold;"></p>
     </div>
 
     <div id="screen-grab" class="screen" style="padding: 0;">
         <div class="status-bar">
             <div class="status-row">
-                <span>代號: <span id="display-name" style="color:#fbc02d;"></span></span>
-                <span>剩餘: <span id="display-tickets" style="color:#00ffaa; font-size: 16px;">0</span></span>
+                <span style="color: #aaa;">餘額: <span id="grab-wallet" style="color:#00ffaa; font-family: monospace;">0</span></span>
+                <span style="color: #aaa;">剩餘: <span id="display-tickets" style="color:#ff5252; font-size: 18px; text-shadow: 0 0 5px #ff5252;">0</span> 個</span>
             </div>
-            <div class="status-won">
-                已奪取: <span id="display-won">0</span>
+            <div style="font-size: 20px; color: #fff; margin-bottom: 10px; text-align: left;">
+                累積搶到: <span id="display-won" style="color: #00e5ff; text-shadow: 0 0 8px rgba(0,229,255,0.8); font-family: monospace; font-size: 24px;">0</span> 元
             </div>
             
             <div class="controls-row">
-                <div id="btn-auto" class="compact-btn" onclick="toggleAutoBot()">⚡ 自動代搶</div>
-                <div id="btn-skip" class="compact-btn" onclick="skipGrabbing()" style="background: #550000; border-color: #ff5252;">⏭️ 瞬間跳過</div>
+                <div id="btn-auto" class="compact-btn" onclick="toggleAutoBot()">⚡ 神速連點</div>
+                <div id="btn-skip" class="compact-btn" onclick="skipGrabbing()" style="background: #222; color: #ff5252; border-color: #550000;">⏭️ 瞬間結算</div>
             </div>
         </div>
         <div id="game-area"></div>
     </div>
 
     <div id="screen-leaderboard" class="screen">
-        <h2 style="color: #00e5ff; text-shadow: 0 0 10px #00e5ff; margin-top: 0;">🏆 結算報告 🏆</h2>
-        <div style="background: #1a1a1a; border-radius: 8px; padding: 2px; text-align: left; overflow-x: auto; border: 1px solid #333;">
+        <h2 style="color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); margin-top: 0;">🏆 財神爺排行榜 🏆</h2>
+        <div style="background: #111; border-radius: 8px; padding: 2px; text-align: left; overflow-x: auto; border: 1px solid #00e5ff;">
             <table>
                 <thead>
-                    <tr><th>#</th><th>代號</th><th>投入</th><th>奪取</th><th>淨利</th><th>ROI</th></tr>
+                    <tr><th>名次</th><th>玩家</th><th>投入</th><th>搶到</th><th>淨賺</th><th>報酬率</th></tr>
                 </thead>
                 <tbody id="leaderboard-body"></tbody>
             </table>
         </div>
-        <button style="margin-top: 20px; background: #333; color: #fff;" onclick="window.location.reload()">中斷連線 (重新開始)</button>
+        <button id="btn-next-round" style="margin-top: 20px; background: #222; color: #fff; border: 1px solid #ff5252;" onclick="prepareNextRound()">前往購買紅包</button>
     </div>
 
     <div id="result-modal"></div>
 
     <div id="admin-panel">
-        <button onclick="adminSettle()">強制引爆</button>
-        <button onclick="adminReset()">格式化</button>
+        <button onclick="adminSettle()" style="color: #fbc02d; border-color: #fbc02d;">引爆(發紅包)</button>
+        <button onclick="adminHardReset()" style="color: #ff5252; border-color: #ff5252;">⚠️ 系統重置</button>
+    </div>
+
+    <div id="admin-left">
+        <button onclick="adminReset()" style="color: #00ffaa; border-color: #00ffaa;">↺ 重置本局(退款)</button>
     </div>
 </div>
 
 <script>
-    // ⚠️ 替換成你的 Ngrok 網址
+    // ⚠️ 部署前，請替換為你的 Ngrok 網址
     const API_BASE = "https://untruckled-dalilah-twitchily.ngrok-free.dev"; 
-    
     const headers = { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true' };
     
     if (new URLSearchParams(window.location.search).get('admin') === 'true') {
         document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-left').style.display = 'block'; 
     }
     
     let currentUser = "";
+    let myWallet = 0;
     let myTotalBet = 0;
     let myTickets = 0;
     let myTotalWon = 0;
+    
     let dropTimer = null;
     let pollingInterval = null;
+    let returnTimer = null; 
     let isGrabbing = false;
     let isAutoOn = false;
     let currentDropSpeed = 400;
 
-    function switchScreen(screenId) {
+    // 【新增】記錄最後看過的廣播時間戳，避免重複彈出
+    let lastSeenDonationTs = 0;
+
+    function openScreen(screenId) {
         document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
+        document.getElementById('recharge-msg').innerText = '';
+        document.getElementById('action-msg').innerText = '';
+        if(screenId === 'screen-action') {
+            document.getElementById('action-wallet-display').innerText = myWallet;
+        }
     }
 
-    async function submitBet() {
+    function showMsg(elId, text, color="#ff5252") {
+        const el = document.getElementById(elId);
+        el.innerText = text; el.style.color = color;
+        setTimeout(() => el.innerText = "", 3000);
+    }
+
+    // 【新增】觸發全服大戶廣播
+    function triggerGlobalToast(user, amount) {
+        const toast = document.getElementById('global-toast');
+        toast.innerHTML = `📢 財神降臨：<span style="color:#fff;">[${user}]</span> 霸氣贊助了 <span style="color:#00ffaa;">$${amount}</span>！`;
+        toast.classList.add('toast-show');
+        
+        // 3 秒後自動收回
+        setTimeout(() => {
+            toast.classList.remove('toast-show');
+        }, 3000);
+    }
+
+    function updateUI() {
+        document.getElementById('lobby-wallet').innerText = myWallet;
+        document.getElementById('action-wallet-display').innerText = myWallet;
+        document.getElementById('grab-wallet').innerText = myWallet;
+        document.getElementById('lobby-bet').innerText = myTotalBet;
+        document.getElementById('lobby-tickets').innerText = myTickets;
+        document.getElementById('display-tickets').innerText = myTickets;
+        document.getElementById('display-won').innerText = myTotalWon;
+    }
+
+    async function login() {
         const user = document.getElementById('username').value.trim();
-        const amount = parseInt(document.getElementById('bet-amount').value, 10);
-        const msgEl = document.getElementById('bet-msg');
-
-        if (!user || isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "參數錯誤！"; return; }
-
-        document.getElementById('btn-bet').disabled = true; msgEl.innerText = "連線中...";
+        if (!user) return showMsg('login-msg', "請輸入暱稱！");
+        document.getElementById('btn-login').disabled = true;
         try {
-            const res = await fetch(`${API_BASE}/bet`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: user, amount: amount }) });
+            const res = await fetch(`${API_BASE}/login`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: user }) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail);
-
-            currentUser = user; myTickets = data.tickets; myTotalBet = data.total_bet; myTotalWon = 0;
-            document.getElementById('display-name').innerText = currentUser;
-            updateWaitScreenInfo(); switchScreen('screen-wait'); startPolling(); 
-        } catch (err) { msgEl.innerText = err.message; document.getElementById('btn-bet').disabled = false; }
+            currentUser = user; myWallet = data.wallet; 
+            myTotalBet = 0; myTickets = 0; myTotalWon = 0; 
+            
+            document.getElementById('lobby-name').innerText = currentUser;
+            updateUI(); openScreen('screen-lobby'); startPolling();
+        } catch(err) { showMsg('login-msg', "無法連線至伺服器"); }
+        finally { document.getElementById('btn-login').disabled = false; }
     }
 
-    async function submitRaise() {
-        const amount = parseInt(document.getElementById('raise-amount').value, 10);
-        const msgEl = document.getElementById('raise-msg');
-        if (isNaN(amount) || amount <= 0 || amount % 100 !== 0) { msgEl.innerText = "無效的資金"; return; }
+    async function recharge() {
+        const amount = parseInt(document.getElementById('input-recharge').value, 10);
+        if (isNaN(amount) || amount <= 0) return showMsg('recharge-msg', "請輸入正確的金額");
+        try {
+            const res = await fetch(`${API_BASE}/recharge`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser, amount: amount }) });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.detail);
+            
+            myWallet = data.wallet; updateUI(); 
+            document.getElementById('input-recharge').value = '';
+            
+            openScreen('screen-lobby'); showResultText(`💰 成功儲值 $${amount} 元`);
+        } catch(err) { showMsg('recharge-msg', err.message); }
+    }
 
-        document.getElementById('btn-raise').disabled = true; msgEl.innerText = "追加中...";
+    async function bet() {
+        const qty = parseInt(document.getElementById('input-action').value, 10);
+        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確數量");
+        const amount = qty * 100; 
+
         try {
             const res = await fetch(`${API_BASE}/bet`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser, amount: amount }) });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.detail);
-
-            myTickets = data.tickets; myTotalBet = data.total_bet; updateWaitScreenInfo();
-            document.getElementById('raise-amount').value = ''; msgEl.innerText = "✅ 算力已升級";
-            setTimeout(() => { msgEl.innerText = ""; }, 2000);
-        } catch (err) { msgEl.innerText = err.message; } finally { document.getElementById('btn-raise').disabled = false; }
+            if(!res.ok) throw new Error(data.detail);
+            
+            myWallet = data.wallet; myTickets = data.tickets; myTotalBet = data.total_bet; updateUI();
+            document.getElementById('input-action').value = ''; 
+            
+            openScreen('screen-lobby'); showResultText(`🧧 成功購買 ${qty} 個紅包`);
+        } catch(err) { showMsg('action-msg', err.message); }
     }
 
-    function updateWaitScreenInfo() {
-        document.getElementById('display-current-bet').innerText = myTotalBet;
-        document.getElementById('display-current-tickets').innerText = myTickets;
-        updateStatusBar();
+    async function donate() {
+        const qty = parseInt(document.getElementById('input-action').value, 10);
+        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確數量");
+        const amount = qty * 100; 
+
+        try {
+            const res = await fetch(`${API_BASE}/donate`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser, amount: amount }) });
+            const data = await res.json();
+            if(!res.ok) throw new Error(data.detail);
+            
+            myWallet = data.wallet; myTotalBet = data.total_bet; updateUI();
+            document.getElementById('input-action').value = ''; 
+            openScreen('screen-lobby'); 
+            
+            // 自己捐款也會收到全服廣播，這裡不用顯示單機 Toast
+        } catch(err) { showMsg('action-msg', err.message); }
     }
 
     function startPolling() {
@@ -194,41 +339,68 @@
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
                 const data = await res.json();
-                document.getElementById('wait-status').innerText = `總資金池: ${data.total_pool} | 狀態: ${data.status}`;
+                document.getElementById('wait-status').innerText = `總獎金池: $${data.total_pool} | 狀態: ${data.status === 'OPEN' ? '等待開局' : data.status}`;
+                
+                // 【修改】檢查是否有新的贊助廣播
+                if (data.last_donation && data.last_donation.ts > lastSeenDonationTs) {
+                    // 第一次登入時不要觸發以前的舊廣播
+                    if (lastSeenDonationTs !== 0) {
+                        triggerGlobalToast(data.last_donation.user, data.last_donation.amount);
+                    }
+                    lastSeenDonationTs = data.last_donation.ts; // 更新最新時間戳
+                }
+
                 if (data.status === "GRABBING") { clearInterval(pollingInterval); startGame(); }
             } catch (err) { console.error(err); }
         }, 1000);
     }
 
-    function startGame() { switchScreen('screen-grab'); scheduleNextDrop(); }
+    function startGame() { 
+        isAutoOn = false;
+        currentDropSpeed = 400;
+        const btnAuto = document.getElementById('btn-auto');
+        btnAuto.classList.remove('active-toggle');
+        btnAuto.innerText = "⚡ 神速連點";
+        
+        const gameArea = document.getElementById('game-area');
+        gameArea.classList.remove('overdrive');
+        gameArea.innerHTML = ''; 
+        
+        openScreen('screen-grab'); 
+        
+        if (myTickets <= 0) {
+            gameArea.innerHTML = '<h2 style="color: #ffcc00; margin-top: 80px; text-shadow: 0 0 10px rgba(255,204,0,0.8);">您本局未參與搶奪<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">觀戰模式：等待其他玩家搶完...</span></h2>';
+            const waitInterval = setInterval(async () => {
+                try {
+                    const res = await fetch(`${API_BASE}/status`, { headers: headers });
+                    const data = await res.json();
+                    if (data.status === "FINISHED") { clearInterval(waitInterval); fetchLeaderboard(); }
+                } catch (err) { console.error(err); }
+            }, 1500);
+            return;
+        }
+
+        scheduleNextDrop(); 
+    }
 
     function scheduleNextDrop() {
         if (myTickets <= 0) return;
-        createEnvelope();
-        dropTimer = setTimeout(scheduleNextDrop, currentDropSpeed);
+        createEnvelope(); dropTimer = setTimeout(scheduleNextDrop, currentDropSpeed);
     }
 
-    // --- 控制面板邏輯 ---
     function toggleAutoBot() {
         isAutoOn = !isAutoOn;
         const btn = document.getElementById('btn-auto');
         const area = document.getElementById('game-area');
-        
         if(isAutoOn) {
-            btn.classList.add('active-toggle');
-            btn.innerText = "⚡ 關閉外掛";
-            area.classList.add('overdrive');
-            currentDropSpeed = 80; // 加速掉落
-            showResultText("OVERDRIVE");
+            btn.classList.add('active-toggle'); btn.innerText = "⚡ 關閉神速";
+            area.classList.add('overdrive'); currentDropSpeed = 80; showResultText("神速駭入模式！");
         } else {
-            btn.classList.remove('active-toggle');
-            btn.innerText = "⚡ 自動代搶";
-            area.classList.remove('overdrive');
-            currentDropSpeed = 400;
+            btn.classList.remove('active-toggle'); btn.innerText = "⚡ 神速連點";
+            area.classList.remove('overdrive'); currentDropSpeed = 400;
         }
     }
 
-    // 🤖 外掛迴圈 (每 50ms 狂點)
     setInterval(() => {
         if (isAutoOn && myTickets > 0 && !isGrabbing) {
             const targets = document.querySelectorAll('.envelope:not(.grabbed)');
@@ -236,45 +408,35 @@
         }
     }, 50);
 
-    // --- ⏭️ 暴力跳過 (Skip) 邏輯 ---
     async function skipGrabbing() {
         if (myTickets <= 0 || isGrabbing) return;
-        if (!confirm("警告：即將在背景瞬間消耗所有算力，確定執行？")) return;
-
-        // 關閉畫面與特效
-        clearTimeout(dropTimer);
+        if (!confirm("確定要瞬間搶完手上所有紅包嗎？")) return;
+        
+        clearTimeout(dropTimer); 
         isAutoOn = false;
         document.getElementById('btn-auto').classList.remove('active-toggle');
-        document.getElementById('game-area').classList.remove('overdrive');
-        document.getElementById('game-area').innerHTML = '<h2 style="color: #fbc02d; margin-top: 80px; text-shadow: 0 0 10px #fbc02d;">⏭️ 暴力破解中...<br><span style="font-size:14px; color:#aaa;">(依據剩餘次數，可能需數秒鐘)</span></h2>';
-
+        document.getElementById('btn-auto').innerText = "⚡ 神速連點";
+        
+        const gameArea = document.getElementById('game-area');
+        gameArea.classList.remove('overdrive');
+        gameArea.innerHTML = '<h2 style="color:#00e5ff; margin-top:80px; text-shadow: 0 0 10px rgba(0,229,255,0.8);">資料結算中...</h2>';
+        
         isGrabbing = true;
-
         try {
-            // 利用 while 迴圈快速打 API，直到次數歸零或池子空了
-            // 注意：這裡使用 await 是為了避免 Ngrok 把併發太高的請求當作 DDoS 擋掉
             while (myTickets > 0) {
                 const res = await fetch(`${API_BASE}/grab`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: currentUser }) });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.detail);
-
-                myTickets = data.tickets_left;
-                myTotalWon = data.total_won_so_far;
-                updateStatusBar();
+                myTickets = data.tickets_left; myTotalWon = data.total_won_so_far; myWallet = data.wallet; updateUI();
             }
-        } catch (err) {
-            if(err.message !== "紅包已經被搶光了") console.error(err);
-        } finally {
-            isGrabbing = false;
-            if (myTickets <= 0) endGame();
-        }
+        } catch (err) { if(err.message !== "紅包已經被搶光了") console.error(err); } 
+        finally { isGrabbing = false; if (myTickets <= 0) endGame(); }
     }
 
     function createEnvelope() {
         const area = document.getElementById('game-area');
         const env = document.createElement('div');
-        env.className = 'envelope';
-        env.innerText = '🧧';
+        env.className = 'envelope'; env.innerText = '🧧';
         env.style.left = (Math.random() * (area.clientWidth - 45)) + 'px';
         const duration = isAutoOn ? (Math.random() * 0.8 + 0.8) : (Math.random() * 1.5 + 1.2);
         env.style.animationDuration = duration + 's';
@@ -291,7 +453,7 @@
     function spawnFloatingNumber(amount, x, y) {
         const area = document.getElementById('game-area');
         const floatText = document.createElement('div');
-        floatText.className = 'floating-amount'; floatText.innerText = `+${amount}`;
+        floatText.className = 'floating-amount'; floatText.innerText = `+$${amount}`;
         floatText.style.left = x; floatText.style.top = y;
         area.appendChild(floatText); setTimeout(() => floatText.remove(), 600);
     }
@@ -311,19 +473,16 @@
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail);
 
-            myTickets = data.tickets_left; myTotalWon = data.total_won_so_far; updateStatusBar();
-            
+            myTickets = data.tickets_left; myTotalWon = data.total_won_so_far; myWallet = data.wallet; updateUI();
             triggerScreenShake(); spawnFloatingNumber(data.won_amount, relativeX, relativeY);
             if (myTickets <= 0) endGame();
-        } catch (err) {
-            if(err.message === "紅包已經被搶光了") endGame();
-        } finally { isGrabbing = false; }
+        } catch (err) { if(err.message === "紅包已經被搶光了") endGame(); } 
+        finally { isGrabbing = false; }
     }
 
     function endGame() {
         clearTimeout(dropTimer);
-        document.getElementById('game-area').innerHTML = '<h2 style="color: #00e5ff; margin-top: 80px; text-shadow: 0 0 10px #00e5ff;">連線中斷<br><br><span style="font-size:16px;">等待系統最終結算...</span></h2>';
-        
+        document.getElementById('game-area').innerHTML = '<h2 style="color: #ff5252; margin-top: 80px; text-shadow: 0 0 10px rgba(255,82,82,0.8);">已全數搶完！<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">等待伺服器公佈榜單...</span></h2>';
         const waitInterval = setInterval(async () => {
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
@@ -334,33 +493,74 @@
     }
 
     async function fetchLeaderboard() {
-        switchScreen('screen-leaderboard');
+        openScreen('screen-leaderboard');
         try {
             const res = await fetch(`${API_BASE}/leaderboard`, { headers: headers });
             const data = await res.json();
             const tbody = document.getElementById('leaderboard-body'); tbody.innerHTML = '';
             
             data.leaderboard.forEach((player, index) => {
-                const isMe = player.user === currentUser ? 'background-color: rgba(255,215,0,0.15); font-weight: bold;' : '';
+                const isMe = player.user === currentUser ? 'background-color: rgba(0,229,255,0.2); font-weight: bold;' : '';
                 const color = player.profit >= 0 ? 'color: #ff5252;' : 'color: #00ffaa;';
-                
+                const sign = player.profit > 0 ? '+' : '';
                 const tr = document.createElement('tr'); tr.style = isMe;
-                tr.innerHTML = `<td>${index + 1}</td><td>${player.user}</td><td>${player.bet}</td><td>${player.won}</td><td style="${color}">${player.profit > 0 ? '+'+player.profit : player.profit}</td><td style="${color}">${player.roi}%</td>`;
+                tr.innerHTML = `<td>${index + 1}</td><td>${player.user}</td><td>${player.bet}</td><td>${player.won}</td><td style="${color}">${sign}${player.profit}</td><td style="${color}">${player.roi}%</td>`;
                 tbody.appendChild(tr);
             });
-        } catch (err) { alert("無法取得排行榜: " + err.message); }
+
+            let cd = 15;
+            const btn = document.getElementById('btn-next-round');
+            btn.innerText = `前往購買紅包 (${cd}s)`;
+            
+            if(returnTimer) clearInterval(returnTimer);
+            returnTimer = setInterval(() => {
+                cd--;
+                btn.innerText = `前往購買紅包 (${cd}s)`;
+                if (cd <= 0) {
+                    clearInterval(returnTimer);
+                    prepareNextRound();
+                }
+            }, 1000);
+
+        } catch (err) { showResultText("無法取得排行榜"); }
     }
 
-    function updateStatusBar() { document.getElementById('display-tickets').innerText = myTickets; document.getElementById('display-won').innerText = myTotalWon; }
-    function showResultText(text) { const modal = document.getElementById('result-modal'); modal.innerText = text; modal.style.display = 'block'; setTimeout(() => modal.style.display = 'none', 600); }
+    function prepareNextRound() {
+        if(returnTimer) clearInterval(returnTimer);
+        myTotalBet = 0; myTickets = 0; myTotalWon = 0; updateUI();
+        
+        openScreen('screen-action'); 
+        startPolling(); 
+    }
+
+    function showResultText(text) { 
+        const modal = document.getElementById('result-modal'); 
+        modal.innerText = text; modal.style.display = 'block'; 
+        setTimeout(() => modal.style.display = 'none', 1500); 
+    }
 
     async function adminSettle() {
-        const secret = prompt("系統授權碼："); if (!secret) return;
-        try { const res = await fetch(`${API_BASE}/admin/settle`, { method: 'POST', headers: headers, body: JSON.stringify({ secret: secret }) }); if (!res.ok) throw new Error((await res.json()).detail); } catch (err) { alert(err.message); }
+        const secret = prompt("請輸入管理員密碼："); if (!secret) return;
+        try { 
+            const res = await fetch(`${API_BASE}/admin/settle`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
+            if(!res.ok) throw new Error((await res.json()).detail);
+        } catch(e){ alert(e.message); }
     }
     async function adminReset() {
-        const secret = prompt("系統授權碼："); if (!secret || !confirm("確定格式化？")) return;
-        try { const res = await fetch(`${API_BASE}/admin/reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret: secret }) }); if (!res.ok) throw new Error((await res.json()).detail); window.location.reload(); } catch (err) { alert(err.message); }
+        const secret = prompt("【重置單局】請輸入密碼："); if (!secret) return;
+        if (!confirm("確定要重置本局並【退還】所有玩家的下注嗎？")) return;
+        try { 
+            await fetch(`${API_BASE}/admin/reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
+            alert("本局已重置，資金已退還。"); window.location.reload(); 
+        } catch(e) { alert(e.message); }
+    }
+    async function adminHardReset() {
+        const secret = prompt("【最高權限】請輸入密碼："); if (!secret) return;
+        if (!confirm("!!! 警告 !!!\n確定要清空所有玩家的錢包餘額與資料嗎？此操作無法復原！")) return;
+        try { 
+            await fetch(`${API_BASE}/admin/hard_reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
+            alert("資料庫已清空，將重新載入。"); window.location.reload(); 
+        } catch(e) { alert(e.message); }
     }
 </script>
 </body>
