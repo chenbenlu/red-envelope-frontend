@@ -10,28 +10,16 @@
         .screen { display: none; flex: 1; padding: 20px; flex-direction: column; justify-content: center; }
         .active { display: flex; }
         
-        /* ========================================= */
-        /* 【新增】全服大戶廣播特效 (Toast) */
-        /* ========================================= */
+        /* 全服大戶廣播特效 */
         #global-toast {
-            position: absolute; 
-            top: -80px; /* 預設隱藏在畫面上方 */
-            left: 50%; 
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.95); 
-            color: #ffcc00;
-            padding: 12px 25px; 
-            border-radius: 30px; 
-            font-weight: bold; 
-            font-size: 15px;
-            z-index: 1000; 
-            border: 2px solid #ffd700;
+            position: absolute; top: -80px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.95); color: #ffcc00; padding: 12px 25px; border-radius: 30px; 
+            font-weight: bold; font-size: 15px; z-index: 1000; border: 2px solid #ffd700;
             box-shadow: 0 0 20px rgba(255, 204, 0, 0.8), inset 0 0 10px rgba(255, 0, 85, 0.5);
             transition: top 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            white-space: nowrap; 
-            text-shadow: 0 0 5px #ff5252; 
+            white-space: nowrap; text-shadow: 0 0 5px #ff5252; 
         }
-        .toast-show { top: 30px !important; } /* 觸發時掉下來 */
+        .toast-show { top: 30px !important; }
 
         h1 { color: #ff5252; text-shadow: 0 0 10px rgba(255, 82, 82, 0.8); font-size: 26px; font-weight: 900; letter-spacing: 2px; }
         input[type="text"], input[type="number"] { padding: 12px; font-size: 16px; width: 100%; margin-bottom: 15px; text-align: center; box-sizing: border-box; background: #333; border: 1px solid #555; color: #00e5ff; border-radius: 8px; font-weight: bold; transition: border 0.3s; }
@@ -42,10 +30,11 @@
         button:active { transform: scale(0.95); }
         button:disabled { background: #555; color: #888; cursor: not-allowed; }
         
+        /* 大廳卡片 */
         .wallet-card { background: #111; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 0 15px rgba(0,229,255,0.2); border: 1px solid #00e5ff; position: relative; overflow: hidden; }
         .wallet-card::before { content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%; background: linear-gradient(90deg, transparent, rgba(0,229,255,0.2), transparent); animation: scanline 3s infinite linear; }
         @keyframes scanline { 0% { left: -100%; } 100% { left: 200%; } }
-        .wallet-balance { font-size: 36px; font-weight: bold; color: #00ffaa; text-shadow: 0 0 10px rgba(0,255,170,0.5); margin-top: 5px; font-family: monospace;}
+        .wallet-balance { font-size: 32px; font-weight: bold; color: #00ffaa; text-shadow: 0 0 10px rgba(0,255,170,0.5); margin-top: 5px; font-family: monospace;}
         
         .dashboard-info { display: flex; justify-content: space-between; background: #222; padding: 15px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
         .info-block { flex: 1; }
@@ -57,6 +46,29 @@
         .nav-btn:active { background: #333; transform: scale(0.98); }
         .nav-btn-icon { font-size: 20px; color: #00e5ff; }
         
+        /* 交易終端介面 */
+        .terminal-panel {
+            background: rgba(10, 10, 10, 0.9); border: 1px solid #00e5ff; border-radius: 12px; padding: 20px; margin-bottom: 15px;
+            box-shadow: inset 0 0 20px rgba(0,229,255,0.05), 0 0 15px rgba(0,229,255,0.2); position: relative;
+        }
+        .terminal-panel::after {
+            content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 2px;
+            background: linear-gradient(90deg, transparent, #00e5ff, transparent);
+        }
+        .term-balance-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px dashed #444; padding-bottom: 10px; }
+        .term-rate { font-family: monospace; color: #777; font-size: 12px; margin-bottom: 15px; background: #222; padding: 5px; border-radius: 4px; letter-spacing: 1px;}
+        
+        #input-action { font-size: 32px; font-weight: 900; color: #ffd700; height: 60px; letter-spacing: 2px; background: #000; border: 2px solid #555; box-shadow: inset 0 0 10px #000;}
+        #input-action:focus { border-color: #ffd700; box-shadow: 0 0 15px rgba(255,215,0,0.3); }
+        
+        .quick-grid { display: flex; gap: 8px; margin-bottom: 20px; }
+        .quick-btn { flex: 1; background: #111; border: 1px solid #444; color: #aaa; padding: 10px 0; border-radius: 6px; font-family: monospace; transition: 0.1s; font-size: 14px; margin-bottom: 0;}
+        .quick-btn:active { background: #00e5ff; color: #000; border-color: #00e5ff; box-shadow: 0 0 10px #00e5ff;}
+        
+        .action-buy { background: linear-gradient(90deg, #ff5252, #fbc02d); box-shadow: 0 4px 15px rgba(255, 82, 82, 0.4); font-size: 18px; padding: 15px; border-radius: 8px;}
+        .action-donate { background: transparent; border: 2px solid #ff0055; color: #ff0055; box-shadow: inset 0 0 10px rgba(255,0,85,0.1); font-size: 14px; padding: 12px; border-radius: 8px; margin-top: 5px;}
+        .action-donate:active { background: rgba(255,0,85,0.2); }
+
         .status-bar { padding: 10px 15px; background: #111; font-weight: bold; border-bottom: 1px solid #00e5ff; }
         .status-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 14px; }
         .controls-row { display: flex; justify-content: space-between; gap: 10px; }
@@ -85,7 +97,6 @@
         th, td { border: 1px solid #444; padding: 6px; text-align: center; }
         th { background-color: #222; color: #ff5252; }
         
-        .action-box { background: #222; padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #444; }
         .back-btn { background: #333; color: #aaa; border: 1px solid #555; }
         
         #admin-panel { position: absolute; bottom: 10px; right: 10px; font-size: 12px; display: none; z-index: 200;}
@@ -100,39 +111,39 @@
     <div id="global-toast">📢 財神廣播測試</div>
 
     <div id="screen-login" class="screen active">
-        <h1>🧧 迎春搶紅包大賽 🧧</h1>
-        <p style="color: #00e5ff; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(0,229,255,0.5);">新年發大財！請先綁定您的錢包</p>
-        <input type="text" id="username" placeholder="輸入玩家暱稱">
+        <h1>🧧 迎春搶紅大賽 🧧</h1>
+        <p style="color: #00e5ff; font-size: 14px; font-weight: bold; text-shadow: 0 0 5px rgba(0,229,255,0.5);">新年發大財 請先綁定您的錢包</p>
+        <input type="text" id="username" placeholder="請輸入玩家暱稱">
         <button id="btn-login" onclick="login()" style="background: linear-gradient(45deg, #00e5ff, #0077ff); border: 1px solid #00e5ff; box-shadow: 0 0 10px rgba(0,229,255,0.3);">進入大廳</button>
         <p id="login-msg" style="color: #ff5252; font-size: 14px; font-weight: bold;"></p>
     </div>
 
     <div id="screen-lobby" class="screen" style="justify-content: flex-start; padding-top: 30px;">
         <div class="wallet-card">
-            <div style="font-size: 14px; color: #aaa; font-weight: bold;">玩家代號: <span id="lobby-name" style="color:#00e5ff;"></span></div>
+            <div style="font-size: 14px; color: #aaa; font-weight: bold;">玩家代號：<span id="lobby-name" style="color:#00e5ff;"></span></div>
             <div style="margin-top: 5px; font-size: 14px; color: #ccc;">目前錢包餘額</div>
-            <div class="wallet-balance">$ <span id="lobby-wallet">0</span></div>
+            <div class="wallet-balance"><span id="lobby-wallet">0</span> 元</div>
         </div>
 
         <div class="dashboard-info">
             <div class="info-block" style="border-right: 1px solid #444;">
-                <div class="info-title">本局已投入 (元)</div>
-                <div class="info-value" id="lobby-bet" style="color: #fff;">0</div>
+                <div class="info-title">本局已投入金額</div>
+                <div class="info-value" style="color: #fff;"><span id="lobby-bet">0</span> 元</div>
             </div>
             <div class="info-block" style="padding-left: 15px;">
-                <div class="info-title">持有紅包 (個)</div>
+                <div class="info-title">持有紅包數量</div>
                 <div class="info-value" id="lobby-tickets" style="color:#ff5252; text-shadow: 0 0 5px rgba(255,82,82,0.5);">0</div>
             </div>
         </div>
 
-        <p id="wait-status" style="font-weight: bold; color: #00ffaa; margin-bottom: 20px; font-size: 16px; font-family: monospace;">等待伺服器開局...</p>
+        <p id="wait-status" style="font-weight: bold; color: #00ffaa; margin-bottom: 20px; font-size: 16px; font-family: monospace;">等待伺服器連線</p>
         
         <div class="nav-btn" onclick="openScreen('screen-recharge')">
             <div>💳 前往儲值中心</div>
             <div class="nav-btn-icon">➔</div>
         </div>
         <div class="nav-btn" onclick="openScreen('screen-action')" style="border-color: #ff5252;">
-            <div style="color: #ff5252;">🧧 購買紅包 / 贊助</div>
+            <div style="color: #ff5252;">🧧 購買紅包與贊助</div>
             <div class="nav-btn-icon" style="color: #ff5252;">➔</div>
         </div>
     </div>
@@ -140,35 +151,48 @@
     <div id="screen-recharge" class="screen">
         <h2 style="color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5);">💳 儲值中心</h2>
         <p style="color: #aaa; font-size: 14px; margin-bottom: 20px;">儲值後即可購買紅包</p>
-        <input type="number" id="input-recharge" placeholder="輸入儲值金額 (元)" min="1">
+        <input type="number" id="input-recharge" placeholder="請輸入儲值金額" min="1">
         <button onclick="recharge()" style="background: linear-gradient(45deg, #00e5ff, #0077ff); border: 1px solid #00e5ff;">確認儲值</button>
         <button class="back-btn" onclick="openScreen('screen-lobby')">返回大廳</button>
         <p id="recharge-msg" style="color: #ff5252; font-size: 14px; margin-top: 15px; font-weight: bold;"></p>
     </div>
 
     <div id="screen-action" class="screen">
-        <h2 style="color: #ff5252; text-shadow: 0 0 10px rgba(255,82,82,0.5);">🧧 購買與贊助</h2>
-        <p style="color: #aaa; font-size: 14px; margin-bottom: 5px;">錢包餘額: <span id="action-wallet-display" style="color: #00ffaa; font-weight:bold; font-family: monospace;">0</span></p>
-        <p style="color: #777; font-size: 12px; margin-bottom: 20px;">1 個紅包 = 100 元</p>
+        <h2 style="color: #ff5252; text-shadow: 0 0 10px rgba(255,82,82,0.8); margin-bottom: 20px;">💰 財神交易中樞 💰</h2>
         
-        <input type="number" id="input-action" placeholder="輸入購買數量 (個)" min="1" step="1">
-        
-        <div style="display: flex; gap: 10px; margin-top: 10px; margin-bottom: 10px;">
-            <button onclick="bet()" style="flex: 1; font-size:14px;">🧧 買紅包</button>
-            <button onclick="donate()" style="flex: 1; background: #222; color: #fff; border: 1px solid #00ffaa; font-size:14px; text-shadow: 0 0 5px #00ffaa;">💸 無償贊助獎池</button>
+        <div class="terminal-panel">
+            <div class="term-balance-row">
+                <span style="color: #aaa; font-size: 14px;">目前資金餘額</span>
+                <span style="color: #00ffaa; font-weight:bold; font-family: monospace; font-size: 20px;"><span id="action-wallet-display">0</span> 元</span>
+            </div>
+            
+            <div class="term-rate">每個紅包等值100元</div>
+            
+            <input type="number" id="input-action" placeholder="請輸入購買數量" min="1" step="1">
+            
+            <div class="quick-grid">
+                <button class="quick-btn" onclick="setQuickAmount(1)">+1</button>
+                <button class="quick-btn" onclick="setQuickAmount(5)">+5</button>
+                <button class="quick-btn" onclick="setQuickAmount(10)">+10</button>
+                <button class="quick-btn" onclick="setQuickAmount('MAX')" style="color:#fbc02d; border-color:#555;">All in</button>
+            </div>
+            
+            <button class="action-buy" onclick="bet()">🧧 購買紅包</button>
+            <button class="action-donate" onclick="donate()">💸 無償贊助獎池</button>
         </div>
-        <button class="back-btn" onclick="openScreen('screen-lobby')">返回大廳等待</button>
-        <p id="action-msg" style="color: #ff5252; font-size: 14px; margin-top: 15px; font-weight: bold;"></p>
+
+        <button class="back-btn" onclick="openScreen('screen-lobby')">返回大廳</button>
+        <p id="action-msg" style="color: #ff5252; font-size: 14px; margin-top: 10px; font-weight: bold;"></p>
     </div>
 
     <div id="screen-grab" class="screen" style="padding: 0;">
         <div class="status-bar">
             <div class="status-row">
-                <span style="color: #aaa;">餘額: <span id="grab-wallet" style="color:#00ffaa; font-family: monospace;">0</span></span>
-                <span style="color: #aaa;">剩餘: <span id="display-tickets" style="color:#ff5252; font-size: 18px; text-shadow: 0 0 5px #ff5252;">0</span> 個</span>
+                <span style="color: #aaa;">餘額：<span id="grab-wallet" style="color:#00ffaa; font-family: monospace;">0</span> 元</span>
+                <span style="color: #aaa;">剩餘：<span id="display-tickets" style="color:#ff5252; font-size: 18px; text-shadow: 0 0 5px #ff5252;">0</span> 個</span>
             </div>
             <div style="font-size: 20px; color: #fff; margin-bottom: 10px; text-align: left;">
-                累積搶到: <span id="display-won" style="color: #00e5ff; text-shadow: 0 0 8px rgba(0,229,255,0.8); font-family: monospace; font-size: 24px;">0</span> 元
+                累積搶到：<span id="display-won" style="color: #00e5ff; text-shadow: 0 0 8px rgba(0,229,255,0.8); font-family: monospace; font-size: 24px;">0</span> 元
             </div>
             
             <div class="controls-row">
@@ -195,12 +219,11 @@
     <div id="result-modal"></div>
 
     <div id="admin-panel">
-        <button onclick="adminSettle()" style="color: #fbc02d; border-color: #fbc02d;">引爆(發紅包)</button>
+        <button onclick="adminSettle()" style="color: #fbc02d; border-color: #fbc02d;">發放紅包</button>
         <button onclick="adminHardReset()" style="color: #ff5252; border-color: #ff5252;">⚠️ 系統重置</button>
     </div>
-
     <div id="admin-left">
-        <button onclick="adminReset()" style="color: #00ffaa; border-color: #00ffaa;">↺ 重置本局(退款)</button>
+        <button onclick="adminReset()" style="color: #00ffaa; border-color: #00ffaa;">↺ 退款並重置本局</button>
     </div>
 </div>
 
@@ -226,8 +249,6 @@
     let isGrabbing = false;
     let isAutoOn = false;
     let currentDropSpeed = 400;
-
-    // 【新增】記錄最後看過的廣播時間戳，避免重複彈出
     let lastSeenDonationTs = 0;
 
     function openScreen(screenId) {
@@ -237,6 +258,7 @@
         document.getElementById('action-msg').innerText = '';
         if(screenId === 'screen-action') {
             document.getElementById('action-wallet-display').innerText = myWallet;
+            document.getElementById('input-action').value = ''; 
         }
     }
 
@@ -246,16 +268,22 @@
         setTimeout(() => el.innerText = "", 3000);
     }
 
-    // 【新增】觸發全服大戶廣播
+    function setQuickAmount(val) {
+        const input = document.getElementById('input-action');
+        if (val === 'MAX') {
+            const maxQty = Math.floor(myWallet / 100);
+            input.value = maxQty > 0 ? maxQty : 0;
+        } else {
+            const currentVal = parseInt(input.value || 0, 10);
+            input.value = currentVal + val;
+        }
+    }
+
     function triggerGlobalToast(user, amount) {
         const toast = document.getElementById('global-toast');
-        toast.innerHTML = `📢 財神降臨：<span style="color:#fff;">[${user}]</span> 霸氣贊助了 <span style="color:#00ffaa;">$${amount}</span>！`;
+        toast.innerHTML = `📢 財神降臨：大戶 <span style="color:#fff;">${user}</span> 霸氣贊助了 <span style="color:#00ffaa;">${amount} 元</span>！`;
         toast.classList.add('toast-show');
-        
-        // 3 秒後自動收回
-        setTimeout(() => {
-            toast.classList.remove('toast-show');
-        }, 3000);
+        setTimeout(() => { toast.classList.remove('toast-show'); }, 3000);
     }
 
     function updateUI() {
@@ -270,7 +298,7 @@
 
     async function login() {
         const user = document.getElementById('username').value.trim();
-        if (!user) return showMsg('login-msg', "請輸入暱稱！");
+        if (!user) return showMsg('login-msg', "請輸入玩家暱稱");
         document.getElementById('btn-login').disabled = true;
         try {
             const res = await fetch(`${API_BASE}/login`, { method: 'POST', headers: headers, body: JSON.stringify({ user_id: user }) });
@@ -295,13 +323,13 @@
             myWallet = data.wallet; updateUI(); 
             document.getElementById('input-recharge').value = '';
             
-            openScreen('screen-lobby'); showResultText(`💰 成功儲值 $${amount} 元`);
+            openScreen('screen-lobby'); showResultText(`💰 成功儲值 ${amount} 元`);
         } catch(err) { showMsg('recharge-msg', err.message); }
     }
 
     async function bet() {
         const qty = parseInt(document.getElementById('input-action').value, 10);
-        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確數量");
+        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確的數量");
         const amount = qty * 100; 
 
         try {
@@ -318,7 +346,7 @@
 
     async function donate() {
         const qty = parseInt(document.getElementById('input-action').value, 10);
-        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確數量");
+        if (isNaN(qty) || qty <= 0) return showMsg('action-msg', "請輸入正確的數量");
         const amount = qty * 100; 
 
         try {
@@ -329,8 +357,6 @@
             myWallet = data.wallet; myTotalBet = data.total_bet; updateUI();
             document.getElementById('input-action').value = ''; 
             openScreen('screen-lobby'); 
-            
-            // 自己捐款也會收到全服廣播，這裡不用顯示單機 Toast
         } catch(err) { showMsg('action-msg', err.message); }
     }
 
@@ -339,15 +365,17 @@
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
                 const data = await res.json();
-                document.getElementById('wait-status').innerText = `總獎金池: $${data.total_pool} | 狀態: ${data.status === 'OPEN' ? '等待開局' : data.status}`;
                 
-                // 【修改】檢查是否有新的贊助廣播
+                let statusText = "等待開局";
+                if(data.status === "GRABBING") statusText = "瘋狂搶奪中";
+                else if(data.status === "FINISHED") statusText = "資料結算中";
+                else if(data.status === "LOCKED") statusText = "獎池鎖定中";
+
+                document.getElementById('wait-status').innerText = `總獎金池：${data.total_pool} 元 | 狀態：${statusText}`;
+                
                 if (data.last_donation && data.last_donation.ts > lastSeenDonationTs) {
-                    // 第一次登入時不要觸發以前的舊廣播
-                    if (lastSeenDonationTs !== 0) {
-                        triggerGlobalToast(data.last_donation.user, data.last_donation.amount);
-                    }
-                    lastSeenDonationTs = data.last_donation.ts; // 更新最新時間戳
+                    if (lastSeenDonationTs !== 0) triggerGlobalToast(data.last_donation.user, data.last_donation.amount);
+                    lastSeenDonationTs = data.last_donation.ts; 
                 }
 
                 if (data.status === "GRABBING") { clearInterval(pollingInterval); startGame(); }
@@ -369,7 +397,7 @@
         openScreen('screen-grab'); 
         
         if (myTickets <= 0) {
-            gameArea.innerHTML = '<h2 style="color: #ffcc00; margin-top: 80px; text-shadow: 0 0 10px rgba(255,204,0,0.8);">您本局未參與搶奪<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">觀戰模式：等待其他玩家搶完...</span></h2>';
+            gameArea.innerHTML = '<h2 style="color: #ffcc00; margin-top: 80px; text-shadow: 0 0 10px rgba(255,204,0,0.8);">您本局未參與搶奪<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">觀戰模式：等待其他玩家搶完</span></h2>';
             const waitInterval = setInterval(async () => {
                 try {
                     const res = await fetch(`${API_BASE}/status`, { headers: headers });
@@ -394,7 +422,7 @@
         const area = document.getElementById('game-area');
         if(isAutoOn) {
             btn.classList.add('active-toggle'); btn.innerText = "⚡ 關閉神速";
-            area.classList.add('overdrive'); currentDropSpeed = 80; showResultText("神速駭入模式！");
+            area.classList.add('overdrive'); currentDropSpeed = 80; showResultText("財神爺附體模式");
         } else {
             btn.classList.remove('active-toggle'); btn.innerText = "⚡ 神速連點";
             area.classList.remove('overdrive'); currentDropSpeed = 400;
@@ -419,7 +447,7 @@
         
         const gameArea = document.getElementById('game-area');
         gameArea.classList.remove('overdrive');
-        gameArea.innerHTML = '<h2 style="color:#00e5ff; margin-top:80px; text-shadow: 0 0 10px rgba(0,229,255,0.8);">資料結算中...</h2>';
+        gameArea.innerHTML = '<h2 style="color:#00e5ff; margin-top:80px; text-shadow: 0 0 10px rgba(0,229,255,0.8);">資料結算中</h2>';
         
         isGrabbing = true;
         try {
@@ -453,7 +481,7 @@
     function spawnFloatingNumber(amount, x, y) {
         const area = document.getElementById('game-area');
         const floatText = document.createElement('div');
-        floatText.className = 'floating-amount'; floatText.innerText = `+$${amount}`;
+        floatText.className = 'floating-amount'; floatText.innerText = `+${amount} 元`;
         floatText.style.left = x; floatText.style.top = y;
         area.appendChild(floatText); setTimeout(() => floatText.remove(), 600);
     }
@@ -482,7 +510,7 @@
 
     function endGame() {
         clearTimeout(dropTimer);
-        document.getElementById('game-area').innerHTML = '<h2 style="color: #ff5252; margin-top: 80px; text-shadow: 0 0 10px rgba(255,82,82,0.8);">已全數搶完！<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">等待伺服器公佈榜單...</span></h2>';
+        document.getElementById('game-area').innerHTML = '<h2 style="color: #ff5252; margin-top: 80px; text-shadow: 0 0 10px rgba(255,82,82,0.8);">已全數搶完<br><br><span style="font-size:16px; color:#aaa; text-shadow:none;">等待伺服器公佈榜單</span></h2>';
         const waitInterval = setInterval(async () => {
             try {
                 const res = await fetch(`${API_BASE}/status`, { headers: headers });
@@ -510,12 +538,12 @@
 
             let cd = 15;
             const btn = document.getElementById('btn-next-round');
-            btn.innerText = `前往購買紅包 (${cd}s)`;
+            btn.innerText = `前往購買紅包 倒數 ${cd} 秒`;
             
             if(returnTimer) clearInterval(returnTimer);
             returnTimer = setInterval(() => {
                 cd--;
-                btn.innerText = `前往購買紅包 (${cd}s)`;
+                btn.innerText = `前往購買紅包 倒數 ${cd} 秒`;
                 if (cd <= 0) {
                     clearInterval(returnTimer);
                     prepareNextRound();
@@ -547,19 +575,19 @@
         } catch(e){ alert(e.message); }
     }
     async function adminReset() {
-        const secret = prompt("【重置單局】請輸入密碼："); if (!secret) return;
-        if (!confirm("確定要重置本局並【退還】所有玩家的下注嗎？")) return;
+        const secret = prompt("請輸入重置單局密碼："); if (!secret) return;
+        if (!confirm("確定要重置本局並退還所有玩家的下注嗎？")) return;
         try { 
-            await fetch(`${API_BASE}/admin/reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
-            alert("本局已重置，資金已退還。"); window.location.reload(); 
+            const res = await fetch(`${API_BASE}/admin/reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
+            alert("本局已重置 資金已退還"); window.location.reload(); 
         } catch(e) { alert(e.message); }
     }
     async function adminHardReset() {
-        const secret = prompt("【最高權限】請輸入密碼："); if (!secret) return;
-        if (!confirm("!!! 警告 !!!\n確定要清空所有玩家的錢包餘額與資料嗎？此操作無法復原！")) return;
+        const secret = prompt("請輸入最高權限密碼："); if (!secret) return;
+        if (!confirm("警告：確定要清空所有玩家的錢包餘額與資料嗎？此操作無法復原！")) return;
         try { 
             await fetch(`${API_BASE}/admin/hard_reset`, { method: 'POST', headers: headers, body: JSON.stringify({ secret }) }); 
-            alert("資料庫已清空，將重新載入。"); window.location.reload(); 
+            alert("資料庫已清空 將重新載入"); window.location.reload(); 
         } catch(e) { alert(e.message); }
     }
 </script>
