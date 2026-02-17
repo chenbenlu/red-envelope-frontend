@@ -39,7 +39,7 @@ class ActionRequest(BaseModel):
 class AdminRequest(BaseModel):
     secret: str
 
-ADMIN_SECRET = "louis123" 
+ADMIN_SECRET = "louis" 
 
 def generate_discrete_pool(total_amount: int, total_tickets: int) -> list:
     if total_tickets == 0: return []
